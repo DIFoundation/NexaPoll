@@ -1,0 +1,3 @@
+[submodule "NexaContract/lib/openzeppelin-contracts"]
+	path = NexaContract/lib/openzeppelin-contracts
+	url = https://github.com/OpenZeppelin/openzeppelin-contracts
