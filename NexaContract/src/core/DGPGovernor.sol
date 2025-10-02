@@ -21,23 +21,40 @@ contract DGPGovernor is
     GovernorVotes, 
     GovernorTimelockControl 
 {
+    uint256 private _quorumPercentage; // e.g., 10 for 10%
+
     constructor(
         IVotes _token,
         TimelockController _timelock,
         uint256 _votingDelay,
         uint256 _votingPeriod,
-        uint256 _proposalThreshold
+        uint256 _proposalThreshold,
+    uint256 quorumPercentage_
     )
         Governor("Decentralized Governance Protocol Governor")
         GovernorSettings(SafeCast.toUint48(_votingDelay), SafeCast.toUint32(_votingPeriod), _proposalThreshold)
         GovernorVotes(_token)
         GovernorTimelockControl(_timelock)
-    {}
+    {
+        require(_quorumPercentage > 0 && _quorumPercentage <= 100, "Invalid quorum percentage");
+    _quorumPercentage = quorumPercentage_;
+    }
 
-    // Override required functions from parent contracts
-    function quorum(uint256 blockNumber) public pure override returns (uint256) {
-        // Example: 10% of total supply required
-        return 100_000e18 / 10;
+    /**
+     * @dev Calculate quorum as a percentage of total supply at a given block
+     * @param blockNumber The block number to query
+     * @return The number of votes required for quorum
+     */
+    function quorum(uint256 blockNumber) public view override returns (uint256) {
+        uint256 totalSupply = token().getPastTotalSupply(blockNumber);
+        return (totalSupply * _quorumPercentage) / 100;
+    }
+
+    /**
+     * @dev Get the current quorum percentage
+     */
+    function quorumPercentage() public view returns (uint256) {
+        return _quorumPercentage;
     }
 
     function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
