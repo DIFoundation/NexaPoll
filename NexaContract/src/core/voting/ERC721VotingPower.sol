@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol";
 
 contract ERC721VotingPower is ERC721Votes {
     constructor(string memory name, string memory symbol)
-        ERC721Votes(name, symbol)
+        ERC721(name, symbol)
+        EIP712(name, "1")
     {}
 }

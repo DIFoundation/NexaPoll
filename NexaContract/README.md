@@ -34,3 +34,23 @@ contracts/
     ├── IGovernor.sol
     ├── ITreasury.sol
     └── IFactory.sol
+
+MVP
+
+contracts/
+│
+├── core/
+│   ├── DGPGovernor.sol   
+│   ├── DGPTimelockController.sol   
+│   ├── DGPTreasury.sol              
+│   │
+│   └── voting/
+│       ├── IVotingPower.sol         
+│       ├── ERC20VotingPower.sol    
+│       └── ERC721VotingPower.sol   
+│
+├── factories/
+│   └── GovernorFactory.sol          
+│
+└── interfaces/
+    └── IGovernor.sol                

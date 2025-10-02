@@ -1,24 +1,19 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-// import {Test, console} from "forge-std/Test.sol";
-// import {Counter} from "../src/Counter.sol";
+import {Test, console} from "forge-std/Test.sol";
+import {GovernorFactory} from "../src/factories/GovernorFactory.sol";
 
-// contract CounterTest is Test {
-//     Counter public counter;
+contract CounterTest is Test {
+    GovernorFactory public governorFactory;
 
-//     function setUp() public {
-//         counter = new Counter();
-//         counter.setNumber(0);
-//     }
+    function setUp() public {
+        governorFactory = new GovernorFactory();
+    }
 
-//     function test_Increment() public {
-//         counter.increment();
-//         assertEq(counter.number(), 1);
-//     }
-
-//     function testFuzz_SetNumber(uint256 x) public {
-//         counter.setNumber(x);
-//         assertEq(counter.number(), x);
-//     }
-// }
+    function test_CreateDAO() public {
+        governorFactory.createDAO();
+        assertEq(governorFactory.getDAOCount(), 1);
+        
+    }
+}
