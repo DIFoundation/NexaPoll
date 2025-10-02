@@ -20,12 +20,16 @@ contract GovernorFactory {
         uint256 proposalThreshold,
         uint256 timelockDelay
     ) external returns (address governor, address timelock, address treasury) {
-        address proposers = msg.sender;
-        address executors = address(0);
+        address[] memory proposers = new address[](1);
+        proposers[0] = msg.sender;
+        address[] memory executors = new address[](1);
+        executors[0] = address(governorContract); // Only governor can execute
 
-        DGPTimelockController timelockContract = new DGPTimelockController(timelockDelay, proposers, executors);
-        DGPGovernor governorContract = new DGPGovernor(token, timelockContract, votingDelay, votingPeriod, proposalThreshold);
-        DGPTreasury treasuryContract = new DGPTreasury(address(governorContract));
+        // Grant proposer role to governor
+        timelockContract.grantRole(timelockContract.PROPOSER_ROLE(), address(governorContract));
+        // Revoke admin role from deployer
+        timelockContract.renounceRole(timelockContract.TIMELOCK_ADMIN_ROLE(), msg.sender);
+
 
         emit DAOCreated(address(governorContract), address(timelockContract), address(treasuryContract));
         return (address(governorContract), address(timelockContract), address(treasuryContract));
