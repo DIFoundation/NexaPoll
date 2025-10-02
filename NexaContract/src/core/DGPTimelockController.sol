@@ -9,6 +9,12 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/governance/TimelockController.sol";
 
 contract DGPTimelockController is TimelockController {
+    /**
+     * @param minDelay Minimum delay in seconds before execution
+     * @param proposers Array of addresses that can propose (typically the Governor)
+     * @param executors Array of addresses that can execute (address(0) = anyone can execute)
+     * @param admin Address with admin rights (should be renounced after setup)
+     */
     constructor(
         uint256 minDelay,
         address[] memory proposers,
@@ -16,6 +22,7 @@ contract DGPTimelockController is TimelockController {
         address admin
     )
         TimelockController(minDelay, proposers, executors, admin)
-    {}
-
+    {
+        require(minDelay >= 1 days, "Delay too short for security");
+    }
 }
