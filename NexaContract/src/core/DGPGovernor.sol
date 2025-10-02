@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
 contract DGPGovernor is 
     Governor, 
@@ -28,7 +29,7 @@ contract DGPGovernor is
         uint256 _proposalThreshold
     )
         Governor("Decentralized Governance Protocol Governor")
-        GovernorSettings(_votingDelay, _votingPeriod, _proposalThreshold)
+        GovernorSettings(SafeCast.toUint48(_votingDelay), SafeCast.toUint32(_votingPeriod), _proposalThreshold)
         GovernorVotes(_token)
         GovernorTimelockControl(_timelock)
     {}
@@ -48,5 +49,52 @@ contract DGPGovernor is
         public view override(Governor, GovernorTimelockControl) returns (ProposalState) 
     {
         return super.state(proposalId);
+    }
+
+    function proposalNeedsQueuing(uint256 proposalId)
+        public
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (bool)
+    {
+        return super.proposalNeedsQueuing(proposalId);
+    }
+
+    function _queueOperations(
+        uint256 proposalId,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
+        return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
+    }
+
+    function _executeOperations(
+        uint256 proposalId,
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) internal override(Governor, GovernorTimelockControl) {
+        super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
+    }
+
+    function _cancel(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
+        return super._cancel(targets, values, calldatas, descriptionHash);
+    }
+
+    function _executor()
+        internal
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (address)
+    {
+        return super._executor();
     }
 }

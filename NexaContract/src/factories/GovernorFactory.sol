@@ -20,18 +20,32 @@ contract GovernorFactory {
         uint256 proposalThreshold,
         uint256 timelockDelay
     ) external returns (address governor, address timelock, address treasury) {
+        // Step 1: Deploy Timelock
         address[] memory proposers = new address[](1);
-        proposers[0] = msg.sender;
+        proposers[0] = msg.sender; // Temporarily set deployer as proposer
         address[] memory executors = new address[](1);
-        executors[0] = address(governorContract); // Only governor can execute
+        executors[0] = address(0); // No executors initially
+        DGPTimelockController timelockContract = new DGPTimelockController(timelockDelay, proposers, executors, msg.sender);
+        timelock = address(timelockContract);
 
-        // Grant proposer role to governor
-        timelockContract.grantRole(timelockContract.PROPOSER_ROLE(), address(governorContract));
-        // Revoke admin role from deployer
-        timelockContract.renounceRole(timelockContract.TIMELOCK_ADMIN_ROLE(), msg.sender);
+        // Step 2: Deploy Governor
+        DGPGovernor governorContract = new DGPGovernor(token, timelockContract, votingDelay, votingPeriod, proposalThreshold);
+        governor = address(governorContract);
 
+        // Step 3: Deploy Treasury
+        DGPTreasury treasuryContract = new DGPTreasury(governor);
+        treasury = address(treasuryContract);
 
-        emit DAOCreated(address(governorContract), address(timelockContract), address(treasuryContract));
-        return (address(governorContract), address(timelockContract), address(treasuryContract));
+        // Step 4: Set up roles
+        // Grant proposer role to the governor
+        timelockContract.grantRole(timelockContract.PROPOSER_ROLE(), governor);
+        // Grant executor role to the governor
+        timelockContract.grantRole(timelockContract.EXECUTOR_ROLE(), governor);
+
+        // Revoke deployer's proposer and admin roles
+        timelockContract.revokeRole(timelockContract.PROPOSER_ROLE(), msg.sender);
+        timelockContract.renounceRole(timelockContract.DEFAULT_ADMIN_ROLE(), msg.sender);
+
+        emit DAOCreated(governor, timelock, treasury);
     }
 }
