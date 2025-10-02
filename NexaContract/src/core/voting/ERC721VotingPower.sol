@@ -6,11 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Votes.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/**
- * @title ERC721VotingPower
- * @dev Each NFT = 1 vote. Snapshot balance is counted at proposal start.
- * Supports delegation and checkpointing for governance.
- */
+// Each NFT = 1 vote. Snapshot balance is counted at proposal start.
 contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, Ownable {
     uint256 private _nextTokenId;
     uint256 private immutable _maxSupply;
