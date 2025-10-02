@@ -20,10 +20,8 @@ contract GovernorFactory {
         uint256 proposalThreshold,
         uint256 timelockDelay
     ) external returns (address governor, address timelock, address treasury) {
-        address ;
-        proposers[0] = msg.sender;
-        address ;
-        executors[0] = address(0);
+        address proposers = msg.sender;
+        address executors = address(0);
 
         DGPTimelockController timelockContract = new DGPTimelockController(timelockDelay, proposers, executors);
         DGPGovernor governorContract = new DGPGovernor(token, timelockContract, votingDelay, votingPeriod, proposalThreshold);
