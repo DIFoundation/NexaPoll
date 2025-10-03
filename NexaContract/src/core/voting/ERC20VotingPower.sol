@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/**
- * @title ERC20VotingPower
- * @dev ERC20 token with voting power delegation and snapshot capabilities.
- * Each token = 1 vote weight. Supports delegation and checkpointing.
- */
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, Ownable {
+/**
+ * @title ERC20VotingPower
+ * @dev ERC20 token with voting power delegation, snapshot capabilities, and admin-controlled minting.
+ * Each token = 1 vote weight. Supports delegation and checkpointing.
+ * Only accounts with MINTER_ROLE can mint new tokens.
+ */
+contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     uint256 private immutable _tokenMaxSupply;
 
     /**
@@ -28,21 +30,25 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, Ownable {
     )
         ERC20(name, symbol)
         ERC20Permit(name)
-        Ownable(msg.sender)
     {
         require(maxSupply_ == 0 || initialSupply <= maxSupply_, "Initial supply exceeds max supply");
         _tokenMaxSupply = maxSupply_;
+        
+        // Set up roles
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(MINTER_ROLE, msg.sender);
+        
         if (initialSupply > 0) {
             _mint(msg.sender, initialSupply);
         }
     }
 
     /**
-     * @dev Mint new tokens (only owner)
+     * @dev Mint new tokens (only callable by MINTER_ROLE)
      * @param to Address to receive tokens
      * @param amount Amount to mint
      */
-    function mint(address to, uint256 amount) external onlyOwner {
+    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) {
         require(to != address(0), "Cannot mint to zero address");
         if (_tokenMaxSupply > 0) {
             require(totalSupply() + amount <= _tokenMaxSupply, "Exceeds max supply");
@@ -51,35 +57,29 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, Ownable {
     }
 
     /**
-     * @dev Burn tokens from caller
-     * @param amount Amount to burn
+     * @dev Batch mint tokens to multiple addresses (only callable by MINTER_ROLE)
+     * @param recipients Array of addresses to receive tokens
+     * @param amounts Array of amounts to mint to each address
      */
-    function burn(uint256 amount) external {
-        _burn(msg.sender, amount);
+    function batchMint(address[] calldata recipients, uint256[] calldata amounts) external onlyRole(MINTER_ROLE) {
+        require(recipients.length == amounts.length, "Arrays length mismatch");
+        
+        for (uint256 i = 0; i < recipients.length; i++) {
+            if (amounts[i] > 0 && recipients[i] != address(0)) {
+                if (_tokenMaxSupply > 0) {
+                    require(totalSupply() + amounts[i] <= _tokenMaxSupply, "Exceeds max supply");
+                }
+                _mint(recipients[i], amounts[i]);
+            }
+        }
     }
 
-    /**
-     * @dev Get max supply (0 = unlimited)
-     */
-    function maxSupply() external view returns (uint256) {
-        return _tokenMaxSupply;
+    // The following functions are overrides required by Solidity
+    function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Votes) {
+        super._update(from, to, value);
     }
 
-    // Required overrides for multiple inheritance
-
-    function _update(address from, address to, uint256 amount)
-        internal
-        override(ERC20, ERC20Votes)
-    {
-        super._update(from, to, amount);
-    }
-
-    function nonces(address owner)
-        public
-        view
-        override(ERC20Permit, Nonces)
-        returns (uint256)
-    {
+    function nonces(address owner) public view override(ERC20Permit, Nonces) returns (uint256) {
         return super.nonces(owner);
     }
 }
