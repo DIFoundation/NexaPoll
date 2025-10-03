@@ -1,21 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/access/IAccessControl.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "../core/DGPGovernor.sol";
+import "../core/DGPTimelockController.sol";
+import "../core/DGPTreasury.sol";
+import "../core/voting/ERC20VotingPower.sol";
+import "../core/voting/ERC721VotingPower.sol";
+
 /**
  * @title GovernorFactory
  * @dev Deploys new DAOs (Governor + Timelock + Treasury).
  * Stores registry for frontend indexing.
  */
-import "../core/DGPGovernor.sol";
-import "../core/DGPTimelockController.sol";
-import "../core/DGPTreasury.sol";
-
 contract GovernorFactory {
+    enum TokenType { ERC20, ERC721 }
+
     struct DAOConfig {
         address governor;
         address timelock;
         address treasury;
         address token;
+        TokenType tokenType;
         address creator;
         uint256 createdAt;
     }
@@ -23,15 +31,21 @@ contract GovernorFactory {
     DAOConfig[] public daos;
     mapping(address => address[]) public daosByCreator;
     mapping(address => bool) public isDAO;
+    mapping(address => address[]) public daoAdmins;
+    mapping(address => mapping(address => bool)) public isDaoAdmin;
 
     event DAOCreated(
         address indexed governor,
         address indexed timelock,
         address indexed treasury,
         address token,
+        TokenType tokenType,
         address creator,
         uint256 daoId
     );
+
+    event DAOAdminAdded(address indexed dao, address indexed admin);
+    event DAOAdminRemoved(address indexed dao, address indexed admin);
 
     /**
      * @dev Create a new DAO with Governor, Timelock, and Treasury
@@ -104,6 +118,7 @@ contract GovernorFactory {
             timelock: timelock,
             treasury: treasury,
             token: address(token),
+            tokenType: TokenType, // Assuming ERC20 token for now
             creator: msg.sender,
             createdAt: block.timestamp
         }));
@@ -111,7 +126,7 @@ contract GovernorFactory {
         daosByCreator[msg.sender].push(governor);
         isDAO[governor] = true;
 
-        emit DAOCreated(governor, timelock, treasury, address(token), msg.sender, daoId);
+        emit DAOCreated(governor, timelock, treasury, address(token), TokenType, msg.sender, daoId);
     }
 
     /**
