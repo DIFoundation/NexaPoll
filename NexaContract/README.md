@@ -54,3 +54,7 @@ contracts/
 │
 └── interfaces/
     └── IGovernor.sol                
+
+
+
+Introduce ENS as future plan
