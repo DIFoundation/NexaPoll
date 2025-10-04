@@ -23,11 +23,23 @@ contract DGPGovernor is
 {
     uint256 private _quorumPercentage; // e.g., 10 for 10%
 
+    enum ProposalStatus { Draft, Active, Passed, Failed }
+
     struct ProposalMetadata {
         string title;
         string description;
+        string proposalType;
+        string proposedSolution;
+        string rationale;
+        string expectedOutcomes;
+        string timeline;
+        string budget;
         address proposer;
         uint256 timestamp;
+        ProposalStatus status;
+        uint256 votesFor;
+        uint256 votesAgainst;
+        uint256 quorumReachedPct;
     }
 
     mapping(uint256 => ProposalMetadata) private _proposalMetadata;
@@ -70,7 +82,13 @@ contract DGPGovernor is
         uint256[] memory values,
         bytes[] memory calldatas,
         string memory title,
-        string memory description
+        string memory description,
+        string memory proposalType,
+        string memory proposedSolution,
+        string memory rationale,
+        string memory expectedOutcomes,
+        string memory timeline,
+        string memory budget
     ) public returns (uint256 proposalId) {
         // Compose a description string for Governor compatibility
         string memory fullDescription = string(abi.encodePacked(title, "\n", description));
@@ -78,8 +96,18 @@ contract DGPGovernor is
         _proposalMetadata[proposalId] = ProposalMetadata({
             title: title,
             description: description,
+            proposalType: proposalType,
+            proposedSolution: proposedSolution,
+            rationale: rationale,
+            expectedOutcomes: expectedOutcomes,
+            timeline: timeline,
+            budget: budget,
             proposer: msg.sender,
-            timestamp: block.timestamp
+            timestamp: block.timestamp,
+            status: ProposalStatus.Active,
+            votesFor: 0,
+            votesAgainst: 0,
+            quorumReachedPct: 0
         });
     }
 
@@ -87,7 +115,14 @@ contract DGPGovernor is
      * @dev Get proposal metadata by proposalId
      */
     function getProposalMetadata(uint256 proposalId) external view returns (ProposalMetadata memory) {
-        return _proposalMetadata[proposalId];
+        ProposalMetadata memory meta = _proposalMetadata[proposalId];
+        // Update votes and quorum reached percentage dynamically
+        (uint256 forVotes, uint256 againstVotes, ) = proposalVotes(proposalId);
+        meta.votesFor = forVotes;
+        meta.votesAgainst = againstVotes;
+        uint256 totalSupply = token().getPastTotalSupply(proposalSnapshot(proposalId));
+        meta.quorumReachedPct = totalSupply > 0 ? (forVotes * 100) / totalSupply : 0;
+        return meta;
     }
 
     /**
