@@ -56,5 +56,8 @@ contracts/
     └── IGovernor.sol                
 
 
-
+|--- future feature ---|
 Introduce ENS as future plan
+ADvance voting type
+off chain voting
+Treasury with multi sig
