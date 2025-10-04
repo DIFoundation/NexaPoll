@@ -14,14 +14,23 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
-contract DGPGovernor is 
-    Governor, 
-    GovernorSettings, 
-    GovernorCountingSimple, 
-    GovernorVotes, 
-    GovernorTimelockControl 
+contract DGPGovernor is
+    Governor,
+    GovernorSettings,
+    GovernorCountingSimple,
+    GovernorVotes,
+    GovernorTimelockControl
 {
     uint256 private _quorumPercentage; // e.g., 10 for 10%
+
+    struct ProposalMetadata {
+        string title;
+        string description;
+        address proposer;
+        uint256 timestamp;
+    }
+
+    mapping(uint256 => ProposalMetadata) private _proposalMetadata;
 
     constructor(
         IVotes _token,
@@ -29,15 +38,56 @@ contract DGPGovernor is
         uint256 _votingDelay,
         uint256 _votingPeriod,
         uint256 _proposalThreshold,
-    uint256 quorumPercentage_
+        uint256 quorumPercentage_
     )
         Governor("Decentralized Governance Protocol Governor")
-        GovernorSettings(SafeCast.toUint48(_votingDelay), SafeCast.toUint32(_votingPeriod), _proposalThreshold)
+        GovernorSettings(
+            SafeCast.toUint48(_votingDelay),
+            SafeCast.toUint32(_votingPeriod),
+            _proposalThreshold
+        )
         GovernorVotes(_token)
         GovernorTimelockControl(_timelock)
     {
-        require(_quorumPercentage > 0 && _quorumPercentage <= 100, "Invalid quorum percentage");
-    _quorumPercentage = quorumPercentage_;
+        require(
+            quorumPercentage_ > 0 && quorumPercentage_ <= 100,
+            "Invalid quorum percentage"
+        );
+        _quorumPercentage = quorumPercentage_;
+    }
+
+    /**
+     * @dev Create a proposal with custom metadata (title, description)
+     * @param targets List of target addresses for calls
+     * @param values List of ETH values for calls
+     * @param calldatas List of calldata for calls
+     * @param title Title of the proposal
+     * @param description Description of the proposal
+     * @return proposalId The ID of the created proposal
+     */
+    function proposeWithMetadata(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory title,
+        string memory description
+    ) public returns (uint256 proposalId) {
+        // Compose a description string for Governor compatibility
+        string memory fullDescription = string(abi.encodePacked(title, "\n", description));
+        proposalId = propose(targets, values, calldatas, fullDescription);
+        _proposalMetadata[proposalId] = ProposalMetadata({
+            title: title,
+            description: description,
+            proposer: msg.sender,
+            timestamp: block.timestamp
+        });
+    }
+
+    /**
+     * @dev Get proposal metadata by proposalId
+     */
+    function getProposalMetadata(uint256 proposalId) external view returns (ProposalMetadata memory) {
+        return _proposalMetadata[proposalId];
     }
 
     /**
@@ -45,7 +95,9 @@ contract DGPGovernor is
      * @param blockNumber The block number to query
      * @return The number of votes required for quorum
      */
-    function quorum(uint256 blockNumber) public view override returns (uint256) {
+    function quorum(
+        uint256 blockNumber
+    ) public view override returns (uint256) {
         uint256 totalSupply = token().getPastTotalSupply(blockNumber);
         return (totalSupply * _quorumPercentage) / 100;
     }
@@ -57,23 +109,30 @@ contract DGPGovernor is
         return _quorumPercentage;
     }
 
-    function proposalThreshold() public view override(Governor, GovernorSettings) returns (uint256) {
+    function proposalThreshold()
+        public
+        view
+        override(Governor, GovernorSettings)
+        returns (uint256)
+    {
         return super.proposalThreshold();
     }
 
     // Resolve multiple inheritance
-    function state(uint256 proposalId) 
-        public view override(Governor, GovernorTimelockControl) returns (ProposalState) 
+    function state(
+        uint256 proposalId
+    )
+        public
+        view
+        override(Governor, GovernorTimelockControl)
+        returns (ProposalState)
     {
         return super.state(proposalId);
     }
 
-    function proposalNeedsQueuing(uint256 proposalId)
-        public
-        view
-        override(Governor, GovernorTimelockControl)
-        returns (bool)
-    {
+    function proposalNeedsQueuing(
+        uint256 proposalId
+    ) public view override(Governor, GovernorTimelockControl) returns (bool) {
         return super.proposalNeedsQueuing(proposalId);
     }
 
@@ -84,7 +143,14 @@ contract DGPGovernor is
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
-        return super._queueOperations(proposalId, targets, values, calldatas, descriptionHash);
+        return
+            super._queueOperations(
+                proposalId,
+                targets,
+                values,
+                calldatas,
+                descriptionHash
+            );
     }
 
     function _executeOperations(
@@ -94,7 +160,13 @@ contract DGPGovernor is
         bytes[] memory calldatas,
         bytes32 descriptionHash
     ) internal override(Governor, GovernorTimelockControl) {
-        super._executeOperations(proposalId, targets, values, calldatas, descriptionHash);
+        super._executeOperations(
+            proposalId,
+            targets,
+            values,
+            calldatas,
+            descriptionHash
+        );
     }
 
     function _cancel(
