@@ -69,7 +69,7 @@ contract GovernorFactory {
         erc20.grantRole(erc20.MINTER_ROLE(), timelock);
         token = address(erc20);
     } else {
-        ERC721VotingPower erc721 = new ERC721VotingPower(name, symbol, maxSupply, baseURI);
+        ERC721VotingPower erc721 = new ERC721VotingPower(name, symbol, maxSupply_, baseURI);
         // grant MINTER_ROLE to timelock
         erc721.grantRole(erc721.MINTER_ROLE(), timelock);
         // mint at least one NFT to creator for initial voting power
@@ -79,18 +79,19 @@ contract GovernorFactory {
 
 
         // Step 2: Deploy Timelock
-        address ;
-        address ;
-        executors[0] = address(0);
+        address[] memory proposers = new address[](1);
+        proposers[0] = address(0); // placeholder, will set to governor after deployment
+        
+        address[] memory executors = new address[](1);
+        executors[0] = address(0); // placeholder, will set to governor after deployment
 
         DGPTimelockController timelockContract = new DGPTimelockController(
             timelockDelay,
             proposers,
             executors,
             address(this)
-        );MyGovernanceERC721
-MyGovernanceERC721
-MyGovernanceERC721
+        );
+
         timelock = address(timelockContract);
 
         // Step 3: Deploy Governor
