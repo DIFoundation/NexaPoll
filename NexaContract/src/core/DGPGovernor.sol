@@ -14,14 +14,24 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 contract DGPGovernor is
     Governor,
     GovernorSettings,
     GovernorCountingSimple,
     GovernorVotes,
-    GovernorTimelockControl
+    GovernorTimelockControl,
+    Ownable
 {
     uint256 private _quorumPercentage; // e.g., 10 for 10%
+
+    // DAO member management
+    mapping(address => bool) private _isMember;
+    address[] private _members;
+
+    event MemberAdded(address indexed member, uint256 votingPower);
+    event MemberRemoved(address indexed member);
 
     enum ProposalStatus { Draft, Active, Passed, Failed }
 
@@ -44,6 +54,8 @@ contract DGPGovernor is
 
     mapping(uint256 => ProposalMetadata) private _proposalMetadata;
 
+    IVotes public votingToken;
+
     constructor(
         IVotes _token,
         TimelockController _timelock,
@@ -60,12 +72,82 @@ contract DGPGovernor is
         )
         GovernorVotes(_token)
         GovernorTimelockControl(_timelock)
+        Ownable()
     {
         require(
             quorumPercentage_ > 0 && quorumPercentage_ <= 100,
             "Invalid quorum percentage"
         );
         _quorumPercentage = quorumPercentage_;
+        votingToken = _token;
+    }
+
+    /**
+     * @dev Add a new DAO member and mint voting power to them (onlyOwner)
+     * @param member Address to add
+     * @param votingPower Amount of voting power to mint (ERC20: tokens, ERC721: NFTs)
+     */
+    function addMember(address member, uint256 votingPower) external onlyOwner {
+        require(member != address(0), "Invalid member");
+        require(!_isMember[member], "Already a member");
+        _isMember[member] = true;
+        _members.push(member);
+        // Mint voting power if Governor has MINTER_ROLE
+        _mintVotingPower(member, votingPower);
+        emit MemberAdded(member, votingPower);
+    }
+
+    /**
+     * @dev Batch add members and mint voting power (onlyOwner)
+     */
+    function batchAddMembers(address[] calldata members, uint256[] calldata votingPowers) external onlyOwner {
+        require(members.length == votingPowers.length, "Length mismatch");
+        for (uint256 i = 0; i < members.length; i++) {
+            addMember(members[i], votingPowers[i]);
+        }
+    }
+
+    /**
+     * @dev Remove a DAO member (onlyOwner)
+     */
+    function removeMember(address member) external onlyOwner {
+        require(_isMember[member], "Not a member");
+        _isMember[member] = false;
+        // Remove from _members array
+        for (uint256 i = 0; i < _members.length; i++) {
+            if (_members[i] == member) {
+                _members[i] = _members[_members.length - 1];
+                _members.pop();
+                break;
+            }
+        }
+        emit MemberRemoved(member);
+    }
+
+    /**
+     * @dev List all DAO members
+     */
+    function listMembers() external view returns (address[] memory) {
+        return _members;
+    }
+
+    /**
+     * @dev Internal mint voting power logic (ERC20 or ERC721)
+     */
+    function _mintVotingPower(address to, uint256 amount) internal {
+        // Try ERC20 mint
+        (bool success, ) = address(votingToken).call(
+            abi.encodeWithSignature("mint(address,uint256)", to, amount)
+        );
+        if (!success) {
+            // Try ERC721 mint (amount = number of NFTs)
+            for (uint256 i = 0; i < amount; i++) {
+                (bool nftSuccess, ) = address(votingToken).call(
+                    abi.encodeWithSignature("mint(address)", to)
+                );
+                require(nftSuccess, "ERC721 mint failed");
+            }
+        }
     }
 
     /**
