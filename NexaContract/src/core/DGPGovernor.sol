@@ -33,7 +33,7 @@ contract DGPGovernor is
     event MemberAdded(address indexed member, uint256 votingPower);
     event MemberRemoved(address indexed member);
 
-    enum ProposalStatus { Draft, Active, Passed, Failed }
+    enum ProposalStatus { Draft, Active, Passed, Failed, Executed }
 
     struct ProposalMetadata {
         string title;
@@ -62,7 +62,8 @@ contract DGPGovernor is
         uint256 _votingDelay,
         uint256 _votingPeriod,
         uint256 _proposalThreshold,
-        uint256 quorumPercentage_
+        uint256 quorumPercentage_,
+        address admin
     )
         Governor("Decentralized Governance Protocol Governor")
         GovernorSettings(
@@ -80,6 +81,7 @@ contract DGPGovernor is
         );
         _quorumPercentage = quorumPercentage_;
         votingToken = _token;
+        _transferOwnership(admin);
     }
 
     /**
