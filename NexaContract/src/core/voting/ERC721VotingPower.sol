@@ -123,7 +123,7 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721, ERC721Votes, AccessControl)
+        override(ERC721, AccessControl)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
