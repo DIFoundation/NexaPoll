@@ -66,18 +66,22 @@ contract GovernorFactory {
 
         // Step 1: Deploy Token
         if (tokenType == TokenType.ERC20) {
-    ERC20VotingPower erc20 = new ERC20VotingPower(name, symbol, initialSupply, maxSupply);
-        // grant MINTER_ROLE to timelock (so DAO can mint later if proposals pass)
-        erc20.grantRole(erc20.MINTER_ROLE(), timelock);
-        token = address(erc20);
-    } else {
-        ERC721VotingPower erc721 = new ERC721VotingPower(name, symbol, maxSupply, baseURI);
-        // grant MINTER_ROLE to timelock
-        erc721.grantRole(erc721.MINTER_ROLE(), timelock);
-        // mint at least one NFT to creator for initial voting power
-        erc721.mint(msg.sender);
-        token = address(erc721);
-    }
+            ERC20VotingPower erc20 = new ERC20VotingPower(name, symbol, initialSupply, maxSupply);
+            // grant MINTER_ROLE to timelock (so DAO can mint later if proposals pass)
+            erc20.grantRole(erc20.MINTER_ROLE(), timelock);
+            // grant MINTER_ROLE to governor (admin) for member management
+            erc20.grantRole(erc20.MINTER_ROLE(), address(governor));
+            token = address(erc20);
+        } else {
+            ERC721VotingPower erc721 = new ERC721VotingPower(name, symbol, maxSupply, baseURI);
+            // grant MINTER_ROLE to timelock
+            erc721.grantRole(erc721.MINTER_ROLE(), timelock);
+            // grant MINTER_ROLE to governor (admin) for member management
+            erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
+            // mint at least one NFT to creator for initial voting power
+            erc721.mint(msg.sender);
+            token = address(erc721);
+        }
 
 
         // Step 2: Deploy Timelock

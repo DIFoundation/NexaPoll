@@ -186,11 +186,46 @@ contract DGPGovernor is
             budget: budget,
             proposer: msg.sender,
             timestamp: block.timestamp,
-            status: ProposalStatus.Active,
+            status: ProposalStatus.Draft,
             votesFor: 0,
             votesAgainst: 0,
             quorumReachedPct: 0
         });
+    }
+
+    // Update proposal status in metadata based on Governor state
+    function getProposalMetadata(uint256 proposalId) external view returns (ProposalMetadata memory) {
+        ProposalMetadata memory meta = _proposalMetadata[proposalId];
+        // Update votes and quorum reached percentage dynamically
+        (uint256 forVotes, uint256 againstVotes, ) = proposalVotes(proposalId);
+        meta.votesFor = forVotes;
+        meta.votesAgainst = againstVotes;
+        uint256 totalSupply = token().getPastTotalSupply(proposalSnapshot(proposalId));
+        meta.quorumReachedPct = totalSupply > 0 ? (forVotes * 100) / totalSupply : 0;
+        // Update status
+        ProposalState state_ = state(proposalId);
+        if (state_ == ProposalState.Pending) meta.status = ProposalStatus.Draft;
+        else if (state_ == ProposalState.Active) meta.status = ProposalStatus.Active;
+        else if (state_ == ProposalState.Succeeded) meta.status = ProposalStatus.Passed;
+        else if (state_ == ProposalState.Defeated) meta.status = ProposalStatus.Failed;
+        return meta;
+    }
+
+    // Prevent proposal creator from voting on their own proposal
+    function castVote(uint256 proposalId, uint8 support) public override returns (uint256) {
+        require(msg.sender != _proposalMetadata[proposalId].proposer, "Creator cannot vote");
+        return super.castVote(proposalId, support);
+    }
+
+    function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason) public override returns (uint256) {
+        require(msg.sender != _proposalMetadata[proposalId].proposer, "Creator cannot vote");
+        return super.castVoteWithReason(proposalId, support, reason);
+    }
+
+    // Admin-only mint voting power to a member (in case they run out)
+    function mintVotingPower(address to, uint256 amount) external onlyOwner {
+        require(_isMember[to], "Not a member");
+        _mintVotingPower(to, amount);
     }
 
     /**
