@@ -107,7 +107,8 @@ contract GovernorFactory {
             votingDelay,
             votingPeriod,
             proposalThreshold,
-            quorumPercentage
+            quorumPercentage,
+            msg.sender // admin
         );
         governor = address(governorContract);
 
