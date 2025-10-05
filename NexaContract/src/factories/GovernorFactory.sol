@@ -51,12 +51,14 @@ contract GovernorFactory {
         string memory name,
         string memory symbol,
         uint256 initialSupply,
+        uint256 maxSupply,
         uint256 votingDelay,
         uint256 votingPeriod,
         uint256 proposalThreshold,
         uint256 timelockDelay,
         uint256 quorumPercentage,
-        TokenType tokenType
+        TokenType tokenType,
+        string memory baseURI
     ) external returns (address governor, address timelock, address treasury, address token) {
         require(votingPeriod > 0, "Voting period must be > 0");
         require(timelockDelay >= 1 days, "Timelock delay too short");
@@ -69,7 +71,7 @@ contract GovernorFactory {
         erc20.grantRole(erc20.MINTER_ROLE(), timelock);
         token = address(erc20);
     } else {
-        ERC721VotingPower erc721 = new ERC721VotingPower(name, symbol, maxSupply_, baseURI);
+        ERC721VotingPower erc721 = new ERC721VotingPower(name, symbol, maxSupply, baseURI);
         // grant MINTER_ROLE to timelock
         erc721.grantRole(erc721.MINTER_ROLE(), timelock);
         // mint at least one NFT to creator for initial voting power
