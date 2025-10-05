@@ -33,7 +33,7 @@ contract DGPGovernor is
     event MemberAdded(address indexed member, uint256 votingPower);
     event MemberRemoved(address indexed member);
 
-    enum ProposalStatus { Draft, Active, Passed, Failed, Executed }
+    enum ProposalStatus { Draft, Active, Passed, Failed, Queued, Executed }
 
     struct ProposalMetadata {
         string title;
@@ -210,6 +210,8 @@ contract DGPGovernor is
         else if (state_ == ProposalState.Active) meta.status = ProposalStatus.Active;
         else if (state_ == ProposalState.Succeeded) meta.status = ProposalStatus.Passed;
         else if (state_ == ProposalState.Defeated) meta.status = ProposalStatus.Failed;
+        else if (state_ == ProposalState.Queued) meta.status = ProposalStatus.Queued;
+        else if (state_ == ProposalState.Executed) meta.status = ProposalStatus.Executed;
         return meta;
     }
 
