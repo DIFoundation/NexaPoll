@@ -61,3 +61,5 @@ Introduce ENS as future plan
 ADvance voting type
 off chain voting
 Treasury with multi sig
+
+Proposal metadata should be stored offChain
