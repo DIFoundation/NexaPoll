@@ -92,6 +92,25 @@ contract testCreateDAO is Test {
         console.log("Token Type 2:", uint(dao.tokenType));
         console.log("Creator Address 2:", dao.creator);
     }
+
+    function testForFailDAOCreation() public {
+        vm.prank(Bob);
+        vm.expectRevert();
+        governorFactory.createDAO(
+            "My First DAO",
+            "MKT",
+            1000000e18, // Initial supply for ERC20
+            0,          // Max supply (0 for unlimited)
+            1,          // Voting delay in blocks
+            1 hours,      // Voting period in blocks (~1 week)
+            100e18,     // Proposal threshold
+            24 hours,    // Timelock delay in seconds (too short) // tested
+            101,         // Quorum percentage // tested
+            GovernorFactory.TokenType.ERC20, // Token type
+            ""
+        );
+
+    }
             
 
 }
