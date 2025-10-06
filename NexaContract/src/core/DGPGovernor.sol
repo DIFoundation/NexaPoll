@@ -73,7 +73,7 @@ contract DGPGovernor is
         )
         GovernorVotes(_token)
         GovernorTimelockControl(_timelock)
-        Ownable()
+        Ownable(admin)
     {
         require(
             quorumPercentage_ > 0 && quorumPercentage_ <= 100,
@@ -105,7 +105,10 @@ contract DGPGovernor is
     function batchAddMembers(address[] calldata members, uint256[] calldata votingPowers) external onlyOwner {
         require(members.length == votingPowers.length, "Length mismatch");
         for (uint256 i = 0; i < members.length; i++) {
-            addMember(members[i], votingPowers[i]);
+            _isMember[members[i]] = true;
+            _members.push(members[i]);
+            _mintVotingPower(members[i], votingPowers[i]);
+            emit MemberAdded(members[i], votingPowers[i]);
         }
     }
 
@@ -230,20 +233,6 @@ contract DGPGovernor is
     function mintVotingPower(address to, uint256 amount) external onlyOwner {
         require(_isMember[to], "Not a member");
         _mintVotingPower(to, amount);
-    }
-
-    /**
-     * @dev Get proposal metadata by proposalId
-     */
-    function getProposalMetadata(uint256 proposalId) external view returns (ProposalMetadata memory) {
-        ProposalMetadata memory meta = _proposalMetadata[proposalId];
-        // Update votes and quorum reached percentage dynamically
-        (uint256 forVotes, uint256 againstVotes, ) = proposalVotes(proposalId);
-        meta.votesFor = forVotes;
-        meta.votesAgainst = againstVotes;
-        uint256 totalSupply = token().getPastTotalSupply(proposalSnapshot(proposalId));
-        meta.quorumReachedPct = totalSupply > 0 ? (forVotes * 100) / totalSupply : 0;
-        return meta;
     }
 
     /**
