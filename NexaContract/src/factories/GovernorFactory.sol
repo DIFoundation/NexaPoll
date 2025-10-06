@@ -162,18 +162,4 @@ contract GovernorFactory {
         return daosByCreator[creator];
     }
 
-    function getDaosByToken(address tokenAddr) external view returns (DAOConfig[] memory result) {
-        uint256 count;
-        for (uint256 i; i < daos.length; i++) {
-            if (daos[i].token == tokenAddr) count++;
-        }
-        result = new DAOConfig[](count);
-        uint256 idx;
-        for (uint256 i; i < daos.length; i++) {
-            if (daos[i].token == tokenAddr) {
-                result[idx] = daos[i];
-                idx++;
-            }
-        }
-    }
 }
