@@ -12,9 +12,9 @@ contract GovernorFactory {
     enum TokenType { ERC20, ERC721 }
 
     struct DAOConfig {
-        string name;
+        string daoName;
         string metadataURI; // e.g. IPFS link or org description
-        string description;
+        string daoDescription;
         address governor;
         address timelock;
         address treasury;
@@ -32,6 +32,7 @@ contract GovernorFactory {
         address indexed governor,
         address indexed timelock,
         address indexed treasury,
+        string daoName,
         address token,
         TokenType tokenType,
         address creator,
@@ -41,15 +42,15 @@ contract GovernorFactory {
     event TokenDeployed(
         address indexed token, 
         TokenType tokenType, 
-        string name, 
-        string symbol
+        string tokenName, 
+        string tokenSymbol
     );
 
 
     /**
      * @dev Deploy a full DAO (token + governor + timelock + treasury)
-     * @param name Token name
-     * @param symbol Token symbol
+     * @param tokenName Token name
+     * @param tokenSymbol Token symbol
      * @param initialSupply For ERC20 only (ignored if ERC721)
      * @param votingDelay Voting delay in blocks
      * @param votingPeriod Voting duration in blocks
@@ -59,8 +60,11 @@ contract GovernorFactory {
      * @param tokenType ERC20 or ERC721
      */
     function createDAO(
-        string memory name,
-        string memory symbol,
+        string memory daoName,
+        string memory daoDescription,
+        string memory metadataURI,
+        string memory tokenName,
+        string memory tokenSymbol,
         uint256 initialSupply,
         uint256 maxSupply,
         uint256 votingDelay,
@@ -69,8 +73,6 @@ contract GovernorFactory {
         uint256 timelockDelay,
         uint256 quorumPercentage,
         TokenType tokenType,
-        string memory metadataURI,
-        string memory description,
         string memory baseURI
     ) external returns (address governor, address timelock, address treasury, address token) {
         require(votingPeriod > 0, "Voting period must be > 0");
@@ -94,24 +96,15 @@ contract GovernorFactory {
 
         // Step 2: Deploy Token
         if (tokenType == TokenType.ERC20) {
-            ERC20VotingPower erc20 = new ERC20VotingPower(name, symbol, initialSupply, maxSupply);
-            // grant MINTER_ROLE to timelock (so DAO can mint later if proposals pass)
-            erc20.grantRole(erc20.MINTER_ROLE(), timelock);
-            // grant MINTER_ROLE to governor (admin) for member management
-            erc20.grantRole(erc20.MINTER_ROLE(), address(governor));
+            ERC20VotingPower erc20 = new ERC20VotingPower(tokenName, tokenSymbol, initialSupply, maxSupply);
             token = address(erc20);
         } else {
-            ERC721VotingPower erc721 = new ERC721VotingPower(name, symbol, maxSupply, baseURI);
-            // grant MINTER_ROLE to timelock
-            erc721.grantRole(erc721.MINTER_ROLE(), timelock);
-            // grant MINTER_ROLE to governor (admin) for member management
-            erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
-            // mint at least one NFT to creator for initial voting power
+            ERC721VotingPower erc721 = new ERC721VotingPower(tokenName, tokenSymbol, maxSupply, baseURI);
             erc721.mint(msg.sender);
             token = address(erc721);
         }
 
-        emit TokenDeployed(token, tokenType, name, symbol);
+        emit TokenDeployed(token, tokenType, tokenName, tokenSymbol);
 
 
         // Step 3: Deploy Governor
@@ -125,6 +118,17 @@ contract GovernorFactory {
             msg.sender // admin
         );
         governor = address(governorContract);
+
+        // Give roles to governor and timelock
+        if (tokenType == TokenType.ERC20) {
+            ERC20VotingPower erc20 = ERC20VotingPower(token);
+            erc20.grantRole(erc20.MINTER_ROLE(), timelock);
+            erc20.grantRole(erc20.MINTER_ROLE(), address(governor));
+        } else {
+            ERC721VotingPower erc721 = ERC721VotingPower(token);
+            erc721.grantRole(erc721.MINTER_ROLE(), timelock);
+            erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
+        }
 
         // Step 4: Deploy Treasury
         DGPTreasury treasuryContract = new DGPTreasury(timelock);
@@ -142,9 +146,9 @@ contract GovernorFactory {
         // Step 6: Save DAO in registry
         uint256 daoId = daos.length;
         daos.push(DAOConfig({
-            name: name,
+            daoName: daoName,
             metadataURI: metadataURI,
-            description: description,
+            daoDescription: daoDescription,
             governor: governor,
             timelock: timelock,
             treasury: treasury,
@@ -157,7 +161,7 @@ contract GovernorFactory {
         daosByCreator[msg.sender].push(governor);
         isDAO[governor] = true;
 
-        emit DAOCreated(governor, timelock, treasury, token, tokenType, msg.sender, daoId);
+        emit DAOCreated(governor, timelock, treasury, daoName, token, tokenType, msg.sender, daoId);
     }
 
     // ------------------ Frontend helper views ------------------
