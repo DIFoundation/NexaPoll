@@ -31,7 +31,9 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            ""
+            "Metadata",
+            "Description",
+            "NFTBaseURI"
         );
 
         vm.stopPrank();
@@ -59,7 +61,9 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            ""
+            "Metadata",
+            "Description",
+            "NFTBaseURI"
         );
 
         vm.stopPrank();
@@ -68,11 +72,17 @@ contract GovernorsTest is Test {
 
         assertEq(dgpGovernor.listMembers().length, 0, "No Member Yet");
 
+        dgpGovernor.addMember(Alice, 10e18);
 
+        assertEq(dgpGovernor.listMembers().length, 1, "One Member Added");
+        assertEq(dgpGovernor.listMembers()[0], Alice, "Alice is the member");
         
     }
 
     function testAddMember() public {
+
+        vm.deal(Bob, 100 ether);
+        vm.startPrank(Bob);
         (address governor, , , ) = governorFactory.createDAO(
             "My First DAO",
             "MKT",
@@ -84,11 +94,15 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            ""
+            "Metadata",
+            "Description",
+            "NFTBaseURI"
         );
 
         DGPGovernor dgpGovernor = DGPGovernor(payable(governor));
         dgpGovernor.addMember(Alice, 100e18);
+
+        vm.stopPrank();
 
         assertEq(dgpGovernor.listMembers().length, 1, "One Member Added");
         assertEq(dgpGovernor.listMembers()[0], Alice, "Alice is the member");
@@ -106,7 +120,9 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            ""
+            "Metadata",
+            "Description",
+            "NFTBaseURI"
         );
 
         DGPGovernor dgpGovernor = DGPGovernor(payable(governor));
@@ -127,7 +143,9 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            ""
+            "Metadata",
+            "Description",
+            "NFTBaseURI"
         );
 
         DGPGovernor dgpGovernor = DGPGovernor(payable(governor));

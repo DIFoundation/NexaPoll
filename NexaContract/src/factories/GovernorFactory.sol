@@ -12,6 +12,9 @@ contract GovernorFactory {
     enum TokenType { ERC20, ERC721 }
 
     struct DAOConfig {
+        string name;
+        string metadataURI; // e.g. IPFS link or org description
+        string description;
         address governor;
         address timelock;
         address treasury;
@@ -34,6 +37,14 @@ contract GovernorFactory {
         address creator,
         uint256 daoId
     );
+
+    event TokenDeployed(
+        address indexed token, 
+        TokenType tokenType, 
+        string name, 
+        string symbol
+    );
+
 
     /**
      * @dev Deploy a full DAO (token + governor + timelock + treasury)
@@ -58,13 +69,30 @@ contract GovernorFactory {
         uint256 timelockDelay,
         uint256 quorumPercentage,
         TokenType tokenType,
+        string memory metadataURI,
+        string memory description,
         string memory baseURI
     ) external returns (address governor, address timelock, address treasury, address token) {
         require(votingPeriod > 0, "Voting period must be > 0");
         require(timelockDelay >= 1 days, "Timelock delay too short");
         require(quorumPercentage > 0 && quorumPercentage <= 100, "Invalid quorum %");
 
-        // Step 1: Deploy Token
+
+        // Step 1: Deploy Timelock
+        address[] memory proposers;
+        address[] memory executors;
+
+        DGPTimelockController timelockContract = new DGPTimelockController(
+            timelockDelay,
+            proposers,
+            executors,
+            address(this)
+        );
+
+        timelock = address(timelockContract);
+
+
+        // Step 2: Deploy Token
         if (tokenType == TokenType.ERC20) {
             ERC20VotingPower erc20 = new ERC20VotingPower(name, symbol, initialSupply, maxSupply);
             // grant MINTER_ROLE to timelock (so DAO can mint later if proposals pass)
@@ -83,22 +111,8 @@ contract GovernorFactory {
             token = address(erc721);
         }
 
+        emit TokenDeployed(token, tokenType, name, symbol);
 
-        // Step 2: Deploy Timelock
-        address[] memory proposers = new address[](1);
-        proposers[0] = address(0); // placeholder, will set to governor after deployment
-        
-        address[] memory executors = new address[](1);
-        executors[0] = address(0); // placeholder, will set to governor after deployment
-
-        DGPTimelockController timelockContract = new DGPTimelockController(
-            timelockDelay,
-            proposers,
-            executors,
-            address(this)
-        );
-
-        timelock = address(timelockContract);
 
         // Step 3: Deploy Governor
         DGPGovernor governorContract = new DGPGovernor(
@@ -128,6 +142,9 @@ contract GovernorFactory {
         // Step 6: Save DAO in registry
         uint256 daoId = daos.length;
         daos.push(DAOConfig({
+            name: name,
+            metadataURI: metadataURI,
+            description: description,
             governor: governor,
             timelock: timelock,
             treasury: treasury,
@@ -160,6 +177,26 @@ contract GovernorFactory {
 
     function getDaosByCreator(address creator) external view returns (address[] memory) {
         return daosByCreator[creator];
+    }
+
+    function getDaosByTokenType(TokenType tokenType) external view returns (DAOConfig[] memory) {
+        uint256 count = 0;
+        uint256 len = daos.length;
+        for (uint256 i; i < len; ++i) {
+            if (daos[i].tokenType == tokenType) {
+                count++;
+            }
+        }
+
+        DAOConfig[] memory filteredDaos = new DAOConfig[](count);
+        uint256 index = 0;
+        for (uint256 i; i < len; ++i) {
+            if (daos[i].tokenType == tokenType) {
+                filteredDaos[index] = daos[i];
+                index++;
+            }
+        }
+        return filteredDaos;
     }
 
 }

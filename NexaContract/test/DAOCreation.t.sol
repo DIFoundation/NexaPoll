@@ -41,7 +41,9 @@ contract testCreateDAO is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            ""
+            "Metadata",
+            "Description",
+            "NFTBaseURI"
         );
 
         vm.stopPrank();
@@ -60,6 +62,8 @@ contract testCreateDAO is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC721, // Token type
+            "Metadata",
+            "Description",
             "https://example.com/nft/"
         );
 
@@ -72,7 +76,7 @@ contract testCreateDAO is Test {
         assertEq(governorFactory.getAllDaos().length, 2, "Two DAO should exist");
         assertEq(governorFactory.getDaosByCreator(Alice).length, 1, "Alice should have one DAO");
         assertEq(governorFactory.getDaosByCreator(Bob).length, 1, "Bob should have one DAO");
-        // assertEq(governorFactory.getDaosByCreator(Bob).length, 2, "Bob should have two DAOs");
+        assertEq(governorFactory.getDaosByTokenType(GovernorFactory.TokenType.ERC20).length, 1, "ERC20 should have one DAO");
 
 
         // Log DAO details for verification
@@ -107,7 +111,9 @@ contract testCreateDAO is Test {
             24 hours,    // Timelock delay in seconds (too short) // tested
             101,         // Quorum percentage // tested
             GovernorFactory.TokenType.ERC20, // Token type
-            ""
+            "Metadata",
+            "Description",
+            "NFTBaseURI"
         );
 
     }
