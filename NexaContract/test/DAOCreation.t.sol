@@ -32,6 +32,9 @@ contract testCreateDAO is Test {
         // Create a DAO with ERC20 token
         governorFactory.createDAO(
             "My First DAO",
+            "Description of My First DAO",
+            "Metadata URI for My First",
+            "DAO Token",
             "MKT",
             1000000e18, // Initial supply for ERC20
             0,          // Max supply (0 for unlimited)
@@ -41,8 +44,6 @@ contract testCreateDAO is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            "Metadata",
-            "Description",
             "NFTBaseURI"
         );
 
@@ -53,6 +54,9 @@ contract testCreateDAO is Test {
         // Create another DAO with ERC721
           governorFactory.createDAO(
             "My Second DAO",
+            "Description of My Second DAO",
+            "Metadata URI for My Second",
+            "DAO Token 2",
             "MKT2",
             1000000e18, // Initial supply for ERC20
             0,          // Max supply (0 for unlimited)
@@ -62,8 +66,6 @@ contract testCreateDAO is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC721, // Token type
-            "Metadata",
-            "Description",
             "https://example.com/nft/"
         );
 
@@ -102,6 +104,9 @@ contract testCreateDAO is Test {
         vm.expectRevert();
         governorFactory.createDAO(
             "My First DAO",
+            "Description of My First DAO",
+            "Metadata URI for My First",
+            "DAO Token",
             "MKT",
             1000000e18, // Initial supply for ERC20
             0,          // Max supply (0 for unlimited)
@@ -111,8 +116,6 @@ contract testCreateDAO is Test {
             24 hours,    // Timelock delay in seconds (too short) // tested
             101,         // Quorum percentage // tested
             GovernorFactory.TokenType.ERC20, // Token type
-            "Metadata",
-            "Description",
             "NFTBaseURI"
         );
 

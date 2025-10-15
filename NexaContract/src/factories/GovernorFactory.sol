@@ -128,6 +128,7 @@ contract GovernorFactory {
             ERC721VotingPower erc721 = ERC721VotingPower(token);
             erc721.grantRole(erc721.MINTER_ROLE(), timelock);
             erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
+        }
 
         // Step 4: Deploy Treasury
         DGPTreasury treasuryContract = new DGPTreasury(timelock);

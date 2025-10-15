@@ -22,6 +22,9 @@ contract GovernorsTest is Test {
         vm.startPrank(Bob);
         governorFactory.createDAO(
             "My First DAO",
+            "Description of My First DAO",
+            "Metadata URI for My First",
+            "DAO Token",
             "MKT",
             1000000e18, // Initial supply for ERC20
             0,          // Max supply (0 for unlimited)
@@ -31,8 +34,6 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            "Metadata",
-            "Description",
             "NFTBaseURI"
         );
 
@@ -52,6 +53,9 @@ contract GovernorsTest is Test {
         vm.startPrank(Bob);
         (address governor, , , ) = governorFactory.createDAO(
             "My First DAO",
+            "Description of My First DAO",
+            "Metadata URI for My First",
+            "DAO Token",
             "MKT",
             1000000e18, // Initial supply for ERC20
             0,          // Max supply (0 for unlimited)
@@ -61,8 +65,6 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            "Metadata",
-            "Description",
             "NFTBaseURI"
         );
 
@@ -85,6 +87,9 @@ contract GovernorsTest is Test {
         vm.startPrank(Bob);
         (address governor, , , ) = governorFactory.createDAO(
             "My First DAO",
+            "Description of My First DAO",
+            "Metadata URI for My First",
+            "DAO Token",
             "MKT",
             1000000e18, // Initial supply for ERC20
             0,          // Max supply (0 for unlimited)
@@ -94,8 +99,6 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            "Metadata",
-            "Description",
             "NFTBaseURI"
         );
 
@@ -111,6 +114,9 @@ contract GovernorsTest is Test {
     function testRemoveMember() public {
         (address governor, , , ) = governorFactory.createDAO(
             "My First DAO",
+            "Description of My First DAO",
+            "Metadata URI for My First",
+            "DAO Token",
             "MKT",
             1000000e18, // Initial supply for ERC20
             0,          // Max supply (0 for unlimited)
@@ -120,8 +126,6 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            "Metadata",
-            "Description",
             "NFTBaseURI"
         );
 
@@ -134,6 +138,9 @@ contract GovernorsTest is Test {
     function testAddMemberAndPropose() public {
         (address governor, , , ) = governorFactory.createDAO(
             "My First DAO",
+            "Description of My First DAO",
+            "Metadata URI for My First",
+            "DAO Token",
             "MKT",
             1000000e18, // Initial supply for ERC20
             0,          // Max supply (0 for unlimited)
@@ -143,8 +150,6 @@ contract GovernorsTest is Test {
             1 days,     // Timelock delay in seconds
             51,         // Quorum percentage
             GovernorFactory.TokenType.ERC20, // Token type
-            "Metadata",
-            "Description",
             "NFTBaseURI"
         );
 
