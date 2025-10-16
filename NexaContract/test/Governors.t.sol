@@ -44,7 +44,7 @@ contract GovernorsTest is Test {
         assertEq(governorFactory.getDaoCount(), 1, "Initial DAO count should be one");
         // assertFalse(governorFactory.getDao(1).exists, "DAO at index 1 should exist false");
         assertEq(governorFactory.getAllDaos().length, 1, "one DAO count");
-        assertEq(governorFactory.getDaosByCreator(Bob).length, 1, "Bob should have zero DAOs");
+        assertEq(governorFactory.getDaosByCreator(Bob).length, 1, "Bob should have one DAO");
     }
 
     function testNewGovernor() public {
@@ -130,6 +130,10 @@ contract GovernorsTest is Test {
         );
 
         DGPGovernor dgpGovernor = DGPGovernor(payable(governor));
+
+        // Add Alice before removing her
+        dgpGovernor.addMember(Alice, 100e18);
+        assertEq(dgpGovernor.listMembers().length, 1, "One Member Added");
 
         dgpGovernor.removeMember(Alice);
         assertEq(dgpGovernor.listMembers().length, 0, "One Member Removed");
