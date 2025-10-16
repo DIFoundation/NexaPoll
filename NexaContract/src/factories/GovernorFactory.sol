@@ -35,7 +35,7 @@ contract GovernorFactory {
         string daoName,
         address token,
         TokenType tokenType,
-        address indexed creator,
+        address creator,
         uint256 daoId
     );
 

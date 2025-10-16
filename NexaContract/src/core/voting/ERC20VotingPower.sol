@@ -44,7 +44,7 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
         _grantRole(MINTER_ROLE, msg.sender);
         
         if (initialSupply > 0) {
-            _mint(msg.sender, initialSupply);
+            _mint(initialHolder, initialSupply);
             emit TokensMinted(initialHolder, initialSupply);
         }
     }
@@ -96,7 +96,7 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
     function nonces(address owner)
         public
         view
-        override(ERC20Permit, ERC20Votes)
+        override(ERC20Permit, ERC20Votes, Nonces)
         returns (uint256)
     {
         return super.nonces(owner);
