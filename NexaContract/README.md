@@ -63,3 +63,5 @@ off chain voting
 Treasury with multi sig
 
 Proposal metadata should be stored offChain
+
+include general voting in future
