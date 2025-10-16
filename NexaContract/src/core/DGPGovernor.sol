@@ -13,7 +13,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract DGPGovernor is
@@ -55,6 +55,8 @@ contract DGPGovernor is
     mapping(uint256 => ProposalMetadata) private _proposalMetadata;
 
     IVotes public votingToken;
+
+    uint256 public constant MAX_VOTING_POWER = 10_000 * 1e18;
 
     constructor(
         IVotes _token,
@@ -230,10 +232,23 @@ contract DGPGovernor is
     }
 
     // Admin-only mint voting power to a member (in case they run out)
+    // function mintVotingPower(address to, uint256 amount) external onlyOwner {
+    //     require(_isMember[to], "Not a member");
+    //     _mintVotingPower(to, amount);
+    // }
+
     function mintVotingPower(address to, uint256 amount) external onlyOwner {
-        require(_isMember[to], "Not a member");
-        _mintVotingPower(to, amount);
+    require(_isMember[to], "Not a member");
+    
+    // Optional safety limit (works for ERC20)
+    try IERC20(address(votingToken)).balanceOf(to) returns (uint256 currentBalance) {
+        require(currentBalance + amount <= MAX_VOTING_POWER, "Exceeds allowed limit");
+    } catch {
+        // Skip check for ERC721 tokens (not balanceOf compatible)
     }
+
+    _mintVotingPower(to, amount);
+}
 
     /**
      * @dev Calculate quorum as a percentage of total supply at a given block

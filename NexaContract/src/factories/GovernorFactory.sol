@@ -111,20 +111,33 @@ contract GovernorFactory {
         );
         governor = address(governorContract);
 
-        // 4) Grant token MINTER_ROLE to timelock (so minting only happens via timelock proposals)
+        // 4) Grant token MINTER_ROLE to governor (for admin minting) and timelock (for proposal execution)
+        //    Transfer DEFAULT_ADMIN_ROLE to timelock so DAO governs role changes
         if (tokenType == TokenType.ERC20) {
             ERC20VotingPower erc20 = ERC20VotingPower(token);
+
+            // Governor can mint directly (for member top-ups)
+            erc20.grantRole(erc20.MINTER_ROLE(), address(governor));
+
+            // Timelock can mint via approved proposals
             erc20.grantRole(erc20.MINTER_ROLE(), timelock);
-            // transfer token DEFAULT_ADMIN_ROLE to timelock so DAO controls role changes
+
+            // Transfer admin control of roles to Timelock
             erc20.grantRole(erc20.DEFAULT_ADMIN_ROLE(), timelock);
-            // factory renounces admin role (factory was admin in token constructor)
+
+            // Factory renounces admin to make DAO self-governing
             erc20.renounceRole(erc20.DEFAULT_ADMIN_ROLE(), address(this));
+
         } else {
             ERC721VotingPower erc721 = ERC721VotingPower(token);
+
+            erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
             erc721.grantRole(erc721.MINTER_ROLE(), timelock);
+
             erc721.grantRole(erc721.DEFAULT_ADMIN_ROLE(), timelock);
             erc721.renounceRole(erc721.DEFAULT_ADMIN_ROLE(), address(this));
         }
+
 
         // 5) Deploy Treasury, with timelock as controller
         DGPTreasury treasuryContract = new DGPTreasury(timelock);
