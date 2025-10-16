@@ -35,7 +35,7 @@ contract GovernorFactory {
         string daoName,
         address token,
         TokenType tokenType,
-        address creator,
+        address indexed creator,
         uint256 daoId
     );
 
@@ -123,11 +123,11 @@ contract GovernorFactory {
         if (tokenType == TokenType.ERC20) {
             ERC20VotingPower erc20 = ERC20VotingPower(token);
             erc20.grantRole(erc20.MINTER_ROLE(), timelock);
-            erc20.grantRole(erc20.MINTER_ROLE(), address(governor));
+            // erc20.grantRole(erc20.MINTER_ROLE(), address(governor));
         } else {
             ERC721VotingPower erc721 = ERC721VotingPower(token);
             erc721.grantRole(erc721.MINTER_ROLE(), timelock);
-            erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
+            // erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
         }
 
         // Step 4: Deploy Treasury
@@ -141,6 +141,7 @@ contract GovernorFactory {
 
         timelockContract.grantRole(proposerRole, governor);
         timelockContract.grantRole(executorRole, governor);
+        timelockContract.grantRole(adminRole, address(governor));
         timelockContract.renounceRole(adminRole, address(this));
 
         // Step 6: Save DAO in registry
@@ -184,23 +185,15 @@ contract GovernorFactory {
     }
 
     function getDaosByTokenType(TokenType tokenType) external view returns (DAOConfig[] memory) {
-        uint256 count = 0;
         uint256 len = daos.length;
+        DAOConfig[] memory temp = new DAOConfig[](len);
+        uint256 count;
         for (uint256 i; i < len; ++i) {
-            if (daos[i].tokenType == tokenType) {
-                count++;
-            }
+            if (daos[i].tokenType == tokenType) temp[count++] = daos[i];
         }
-
-        DAOConfig[] memory filteredDaos = new DAOConfig[](count);
-        uint256 index = 0;
-        for (uint256 i; i < len; ++i) {
-            if (daos[i].tokenType == tokenType) {
-                filteredDaos[index] = daos[i];
-                index++;
-            }
-        }
-        return filteredDaos;
+        // shrink array
+        assembly { mstore(temp, count) }
+        return temp;
     }
 
 }
