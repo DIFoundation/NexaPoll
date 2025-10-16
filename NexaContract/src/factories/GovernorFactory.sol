@@ -35,17 +35,11 @@ contract GovernorFactory {
         string daoName,
         address token,
         TokenType tokenType,
-        address indexed creator,
+        address creator,
         uint256 daoId
     );
 
-    event TokenDeployed(
-        address indexed token, 
-        TokenType tokenType, 
-        string tokenName, 
-        string tokenSymbol
-    );
-
+    event TokenDeployed(address indexed token, TokenType tokenType, string tokenName, string tokenSymbol);
 
     /**
      * @dev Deploy a full DAO (token + governor + timelock + treasury)
@@ -79,35 +73,33 @@ contract GovernorFactory {
         require(timelockDelay >= 1 days, "Timelock delay too short");
         require(quorumPercentage > 0 && quorumPercentage <= 100, "Invalid quorum %");
 
-
-        // Step 1: Deploy Timelock
-        address[] memory proposers;
-        address[] memory executors;
+        // 1) Deploy Timelock (factory is initial admin)
+        address[] memory proposers; // empty, will grant governor later
+        address[] memory executors; // empty; we'll set executor role policy below
 
         DGPTimelockController timelockContract = new DGPTimelockController(
             timelockDelay,
             proposers,
             executors,
-            address(this)
+            address(this) // factory is admin temporarily
         );
-
         timelock = address(timelockContract);
 
-
-        // Step 2: Deploy Token
+        // 2) Deploy Token (factory is msg.sender within token ctor and thus initially admin/minter)
         if (tokenType == TokenType.ERC20) {
-            ERC20VotingPower erc20 = new ERC20VotingPower(tokenName, tokenSymbol, initialSupply, maxSupply, msg.sender); // is msg.sender here cool or I should do manual input
+            // constructor signature: (name, symbol, initialSupply, maxSupply, initialHolder)
+            ERC20VotingPower erc20 = new ERC20VotingPower(tokenName, tokenSymbol, initialSupply, maxSupply, msg.sender);
             token = address(erc20);
         } else {
             ERC721VotingPower erc721 = new ERC721VotingPower(tokenName, tokenSymbol, maxSupply, baseURI);
-            erc721.mint(msg.sender);
             token = address(erc721);
+            // mint initial nft to creator (factory has MINTER_ROLE from constructor)
+            erc721.mint(msg.sender);
         }
 
         emit TokenDeployed(token, tokenType, tokenName, tokenSymbol);
 
-
-        // Step 3: Deploy Governor
+        // 3) Deploy Governor (governor exists now)
         DGPGovernor governorContract = new DGPGovernor(
             IVotes(token),
             timelockContract,
@@ -115,36 +107,46 @@ contract GovernorFactory {
             votingPeriod,
             proposalThreshold,
             quorumPercentage,
-            msg.sender // admin
+            msg.sender // initial admin, often the creator (optional: governor contract may ignore this)
         );
         governor = address(governorContract);
 
-        // Give roles to governor and timelock
+        // 4) Grant token MINTER_ROLE to timelock (so minting only happens via timelock proposals)
         if (tokenType == TokenType.ERC20) {
             ERC20VotingPower erc20 = ERC20VotingPower(token);
             erc20.grantRole(erc20.MINTER_ROLE(), timelock);
-            // erc20.grantRole(erc20.MINTER_ROLE(), address(governor));
+            // transfer token DEFAULT_ADMIN_ROLE to timelock so DAO controls role changes
+            erc20.grantRole(erc20.DEFAULT_ADMIN_ROLE(), timelock);
+            // factory renounces admin role (factory was admin in token constructor)
+            erc20.renounceRole(erc20.DEFAULT_ADMIN_ROLE(), address(this));
         } else {
             ERC721VotingPower erc721 = ERC721VotingPower(token);
             erc721.grantRole(erc721.MINTER_ROLE(), timelock);
-            // erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
+            erc721.grantRole(erc721.DEFAULT_ADMIN_ROLE(), timelock);
+            erc721.renounceRole(erc721.DEFAULT_ADMIN_ROLE(), address(this));
         }
 
-        // Step 4: Deploy Treasury
+        // 5) Deploy Treasury, with timelock as controller
         DGPTreasury treasuryContract = new DGPTreasury(timelock);
         treasury = address(treasuryContract);
 
-        // Step 5: Configure roles
+        // 6) Configure timelock roles:
+        // - Governor becomes proposer (can queue proposals)
+        // - Executors: we allow anyone (address(0)) to execute after timelock delay (common pattern)
         bytes32 proposerRole = timelockContract.PROPOSER_ROLE();
         bytes32 executorRole = timelockContract.EXECUTOR_ROLE();
         bytes32 adminRole = timelockContract.DEFAULT_ADMIN_ROLE();
 
         timelockContract.grantRole(proposerRole, governor);
-        timelockContract.grantRole(executorRole, governor);
-        timelockContract.grantRole(adminRole, address(governor));
+        // allow anyone to execute queued operations (optional; change to governor if you want restricted execution)
+        timelockContract.grantRole(executorRole, address(0));
+
+        // Make governor the admin of timelock (so governance can change roles via proposals)
+        timelockContract.grantRole(adminRole, governor);
+        // factory renounces admin role on timelock
         timelockContract.renounceRole(adminRole, address(this));
 
-        // Step 6: Save DAO in registry
+        // 7) Save DAO registry
         uint256 daoId = daos.length;
         daos.push(DAOConfig({
             daoName: daoName,
@@ -163,6 +165,7 @@ contract GovernorFactory {
         isDAO[governor] = true;
 
         emit DAOCreated(governor, timelock, treasury, daoName, token, tokenType, msg.sender, daoId);
+        return (governor, timelock, treasury, token);
     }
 
     // ------------------ Frontend helper views ------------------
@@ -191,9 +194,7 @@ contract GovernorFactory {
         for (uint256 i; i < len; ++i) {
             if (daos[i].tokenType == tokenType) temp[count++] = daos[i];
         }
-        // shrink array
         assembly { mstore(temp, count) }
         return temp;
     }
-
 }

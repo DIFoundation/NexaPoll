@@ -113,16 +113,19 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
     }
 
     // OpenZeppelin style overrides for ERC721Votes
-    function _afterTokenTransfer(address from, address to, uint256 tokenId) internal override(ERC721, ERC721Votes) {
-        super._afterTokenTransfer(from, to, tokenId);
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override(ERC721, ERC721Votes)
+        returns (address)
+    {
+        return super._update(to, tokenId, auth);
     }
 
-    function _mint(address to, uint256 tokenId) internal override(ERC721, ERC721Votes) {
-        super._mint(to, tokenId);
-    }
-
-    function _burn(uint256 tokenId) internal override(ERC721, ERC721Votes) {
-        super._burn(tokenId);
+    function _increaseBalance(address account, uint128 value)
+        internal
+        override(ERC721, ERC721Votes)
+    {
+        super._increaseBalance(account, value);
     }
 
     function supportsInterface(bytes4 interfaceId)

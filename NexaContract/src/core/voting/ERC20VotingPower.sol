@@ -44,7 +44,7 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
         _grantRole(MINTER_ROLE, msg.sender);
         
         if (initialSupply > 0) {
-            super._mint(msg.sender, initialSupply);
+            _mint(initialHolder, initialSupply);
             emit TokensMinted(initialHolder, initialSupply);
         }
     }
@@ -59,7 +59,7 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
         if (_tokenMaxSupply > 0) {
             require(totalSupply() + amount <= _tokenMaxSupply, "Exceeds max supply");
         }
-        super._mint(to, amount);
+        _mint(to, amount);
         emit TokensMinted(to, amount);
     }
 
@@ -84,20 +84,22 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
         }
     }
 
-     // OpenZeppelin required overrides for ERC20 + ERC20Votes
-    function _afterTokenTransfer(address from, address to, uint256 amount)
+    // OpenZeppelin v5 unified hook
+    function _update(address from, address to, uint256 value)
         internal
         override(ERC20, ERC20Votes)
     {
-        super._afterTokenTransfer(from, to, amount);
+        super._update(from, to, value);
     }
 
-    function _mint(address to, uint256 amount) internal override(ERC20, ERC20Votes) {
-        super._mint(to, amount);
-    }
-
-    function _burn(address account, uint256 amount) internal override(ERC20, ERC20Votes) {
-        super._burn(account, amount);
+    // Conflict between ERC20Permit and ERC20Votes
+    function nonces(address owner)
+        public
+        view
+        override(ERC20Permit, ERC20Votes, Nonces)
+        returns (uint256)
+    {
+        return super.nonces(owner);
     }
 
     // Admin helper to add a minter (factory or creator/timelock can call while holding DEFAULT_ADMIN_ROLE)
