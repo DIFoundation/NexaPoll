@@ -69,7 +69,7 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
     function mint(address to) external onlyRole(MINTER_ROLE) returns (uint256) {
         require(to != address(0), "Cannot mint to zero address");
         if (_maxSupply > 0) {
-            require(_nextTokenId < _maxSupply, "Max supply reached");
+            require(_nextTokenId <= _maxSupply, "Max supply reached");
         }
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
@@ -88,13 +88,12 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
         require(to != address(0), "Cannot mint to zero address");
         require(quantity > 0, "Quantity must be greater than 0");
         if (_maxSupply > 0) {
-            require(_nextTokenId + quantity <= _maxSupply, "Exceeds max supply");
+            require(_nextTokenId + quantity - 1 <= _maxSupply, "Exceeds max supply");
         }
         
         for (uint256 i = 0; i < quantity; i++) {
             uint256 tokenId = _nextTokenId++;
             _safeMint(to, tokenId);
-
             emit NFTMinted(to, tokenId);
         }
     }
@@ -113,20 +112,17 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
         return _maxSupply;
     }
 
-    // The following functions are overrides required by Solidity
-    function _update(address to, uint256 tokenId, address auth)
-        internal
-        override(ERC721, ERC721Votes)
-        returns (address)
-    {
-        return super._update(to, tokenId, auth);
+    // OpenZeppelin style overrides for ERC721Votes
+    function _afterTokenTransfer(address from, address to, uint256 tokenId) internal override(ERC721, ERC721Votes) {
+        super._afterTokenTransfer(from, to, tokenId);
     }
 
-    function _increaseBalance(address account, uint128 value)
-        internal
-        override(ERC721, ERC721Votes)
-    {
-        super._increaseBalance(account, value);
+    function _mint(address to, uint256 tokenId) internal override(ERC721, ERC721Votes) {
+        super._mint(to, tokenId);
+    }
+
+    function _burn(uint256 tokenId) internal override(ERC721, ERC721Votes) {
+        super._burn(tokenId);
     }
 
     function supportsInterface(bytes4 interfaceId)
