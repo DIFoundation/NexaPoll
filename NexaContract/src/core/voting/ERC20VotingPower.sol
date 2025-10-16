@@ -96,7 +96,7 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
     function nonces(address owner)
         public
         view
-        override(ERC20Permit, ERC20Votes, Nonces)
+        override(ERC20Permit, Nonces)
         returns (uint256)
     {
         return super.nonces(owner);
