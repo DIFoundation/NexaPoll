@@ -16,22 +16,27 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     uint256 private immutable _tokenMaxSupply;
 
+    event TokensMinted(address indexed to, uint256 amount);
+
     /**
      * @param name Token name
      * @param symbol Token symbol
      * @param initialSupply Initial supply minted to deployer
      * @param maxSupply_ Maximum supply that can ever exist (0 = unlimited)
+     * @param initialHolder Address that receives initialSupply (use creator)
      */
     constructor(
         string memory name,
         string memory symbol,
         uint256 initialSupply,
-        uint256 maxSupply_
+        uint256 maxSupply_,
+        address initialHolder
     )
         ERC20(name, symbol)
         ERC20Permit(name)
     {
         require(maxSupply_ == 0 || initialSupply <= maxSupply_, "Initial supply exceeds max supply");
+        require(initialHolder != address(0), "Initial holder zero address");
         _tokenMaxSupply = maxSupply_;
         
         // Set up roles
@@ -39,7 +44,8 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
         _grantRole(MINTER_ROLE, msg.sender);
         
         if (initialSupply > 0) {
-            _mint(msg.sender, initialSupply);
+            super._mint(msg.sender, initialSupply);
+            emit TokensMinted(initialHolder, initialSupply);
         }
     }
 
@@ -53,7 +59,8 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
         if (_tokenMaxSupply > 0) {
             require(totalSupply() + amount <= _tokenMaxSupply, "Exceeds max supply");
         }
-        _mint(to, amount);
+        super._mint(to, amount);
+        emit TokensMinted(to, amount);
     }
 
     /**
@@ -65,21 +72,37 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
         require(recipients.length == amounts.length, "Arrays length mismatch");
         
         for (uint256 i = 0; i < recipients.length; i++) {
-            if (amounts[i] > 0 && recipients[i] != address(0)) {
+            address r = recipients[i];
+            uint256 a = amounts[i];
+            if (a > 0 && r != address(0)) {
                 if (_tokenMaxSupply > 0) {
-                    require(totalSupply() + amounts[i] <= _tokenMaxSupply, "Exceeds max supply");
+                    require(totalSupply() + a <= _tokenMaxSupply, "Exceeds max supply");
                 }
-                _mint(recipients[i], amounts[i]);
+                super._mint(r, a);
+                emit TokensMinted(r, a);
             }
         }
     }
 
-    // The following functions are overrides required by Solidity
-    function _update(address from, address to, uint256 value) internal override(ERC20, ERC20Votes) {
-        super._update(from, to, value);
+     // OpenZeppelin required overrides for ERC20 + ERC20Votes
+    function _afterTokenTransfer(address from, address to, uint256 amount)
+        internal
+        override(ERC20, ERC20Votes)
+    {
+        super._afterTokenTransfer(from, to, amount);
     }
 
-    function nonces(address owner) public view override(ERC20Permit, Nonces) returns (uint256) {
-        return super.nonces(owner);
+    function _mint(address to, uint256 amount) internal override(ERC20, ERC20Votes) {
+        super._mint(to, amount);
+    }
+
+    function _burn(address account, uint256 amount) internal override(ERC20, ERC20Votes) {
+        super._burn(account, amount);
+    }
+
+    // Admin helper to add a minter (factory or creator/timelock can call while holding DEFAULT_ADMIN_ROLE)
+    function setMinter(address newMinter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newMinter != address(0), "Invalid minter");
+        _grantRole(MINTER_ROLE, newMinter);
     }
 }

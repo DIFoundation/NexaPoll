@@ -19,6 +19,8 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
     uint256 private immutable _maxSupply;
     string private _baseTokenURI;
 
+    event NFTMinted(address indexed to, uint256 indexed tokenId);
+
     /**
      * @param name Token name
      * @param symbol Token symbol
@@ -36,6 +38,8 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
     {
         _maxSupply = maxSupply_;
         _baseTokenURI = baseURI;
+
+        _nextTokenId = 1;
         
         // Set up roles
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -69,6 +73,9 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
         }
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
+
+        emit NFTMinted(to, tokenId);
+
         return tokenId;
     }
 
@@ -87,6 +94,8 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
         for (uint256 i = 0; i < quantity; i++) {
             uint256 tokenId = _nextTokenId++;
             _safeMint(to, tokenId);
+
+            emit NFTMinted(to, tokenId);
         }
     }
 
@@ -94,7 +103,7 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
      * @dev Get the total number of tokens in existence
      */
     function totalSupply() external view returns (uint256) {
-        return _nextTokenId;
+        return _nextTokenId - 1;
     }
 
     /**
@@ -127,5 +136,10 @@ contract ERC721VotingPower is ERC721, EIP712, ERC721Votes, AccessControl {
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function setMinter(address newMinter) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(newMinter != address(0), "Invalid minter");
+        _grantRole(MINTER_ROLE, newMinter);
     }
 }

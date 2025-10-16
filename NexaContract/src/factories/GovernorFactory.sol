@@ -96,7 +96,7 @@ contract GovernorFactory {
 
         // Step 2: Deploy Token
         if (tokenType == TokenType.ERC20) {
-            ERC20VotingPower erc20 = new ERC20VotingPower(tokenName, tokenSymbol, initialSupply, maxSupply);
+            ERC20VotingPower erc20 = new ERC20VotingPower(tokenName, tokenSymbol, initialSupply, maxSupply, msg.sender); // is msg.sender here cool or I should do manual input
             token = address(erc20);
         } else {
             ERC721VotingPower erc721 = new ERC721VotingPower(tokenName, tokenSymbol, maxSupply, baseURI);
