@@ -122,6 +122,9 @@ contract GovernorFactory {
             // Timelock can mint via approved proposals
             erc20.grantRole(erc20.MINTER_ROLE(), timelock);
 
+            // Revoke factory's own minter role so it cannot mint after setup
+            erc20.revokeRole(erc20.MINTER_ROLE(), address(this));
+
             // Transfer admin control of roles to Timelock
             erc20.grantRole(erc20.DEFAULT_ADMIN_ROLE(), timelock);
 
@@ -134,13 +137,17 @@ contract GovernorFactory {
             erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
             erc721.grantRole(erc721.MINTER_ROLE(), timelock);
 
+            // Revoke factory's own minter role so it cannot mint after setup
+            erc721.revokeRole(erc721.MINTER_ROLE(), address(this));
+
             erc721.grantRole(erc721.DEFAULT_ADMIN_ROLE(), timelock);
             erc721.renounceRole(erc721.DEFAULT_ADMIN_ROLE(), address(this));
         }
 
 
         // 5) Deploy Treasury, with timelock as controller
-        DGPTreasury treasuryContract = new DGPTreasury(timelock, msg.sender);
+    // The governor parameter for the treasury should be the timelock (executor of governance actions)
+    DGPTreasury treasuryContract = new DGPTreasury(timelock, timelock);
         treasury = address(treasuryContract);
 
         // 6) Configure timelock roles:
