@@ -78,7 +78,7 @@ contract ERC20VotingPower is ERC20, ERC20Permit, ERC20Votes, AccessControl {
                 if (_tokenMaxSupply > 0) {
                     require(totalSupply() + a <= _tokenMaxSupply, "Exceeds max supply");
                 }
-                super._mint(r, a);
+                _mint(r, a);
                 emit TokensMinted(r, a);
             }
         }
