@@ -140,7 +140,7 @@ contract GovernorFactory {
 
 
         // 5) Deploy Treasury, with timelock as controller
-        DGPTreasury treasuryContract = new DGPTreasury(timelock);
+        DGPTreasury treasuryContract = new DGPTreasury(timelock, msg.sender);
         treasury = address(treasuryContract);
 
         // 6) Configure timelock roles:
