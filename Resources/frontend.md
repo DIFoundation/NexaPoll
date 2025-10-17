@@ -6,23 +6,30 @@ This document outlines the proposed frontend architecture, screens, and user flo
 11 proposed main screens (plus reusable dialogs / modals). 
 Each screen includes required components, data sources (on-chain calls), actions, and access control notes.
 
-1) Landing / Home (1 screen)
+### Landing Page (1 screen)
+User onboarding and gives information about the app features and how to use it.
+
+### Home Page (1 screen)
 - Purpose: High-level entry to the app, discover DAOs, links to create or manage DAOs, onboarding/learn.
+
 - Visible components:
   - Header: Connect Wallet, user address, network indicator.
   - Search / Filter bar: search by DAO name, token type (ERC20 / ERC721), creator address.
   - DAO list/grid: each card shows daoName, short description, token type, createdAt, token address, governor address, treasury ETH balance (quick fetch).
   - Create DAO CTA (prominent).
+
 - Data / contract calls:
   - `GovernorFactory.getDaoCount()` (optional)
   - `GovernorFactory.getAllDaos()` to populate list (if large, add pagination or indexer).
   - For each DAO display: call `DGPTreasury.getETHBalance()` and optionally `getTokenBalance(token)` if you want token balance.
+
 - Actions:
   - Click DAO card -> DAO Dashboard (screen 2).
   - Click Create DAO -> Create DAO screen (screen 3).
+  
 - Access control: anyone can view.
 
-2) DAO Dashboard / Overview (1 screen per DAO)
+### DAO Dashboard / Overview (1 screen per DAO)
 - Purpose: Single-page hub for a DAO with tabs (Overview, Treasury, Proposals, Members, Token, Admin).
 - Top area:
   - DAO name, metadata (from `DAOConfig.metadataURI` or `daoDescription`), creator, createdAt.
