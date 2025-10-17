@@ -1,6 +1,10 @@
 # Frontend Application Specification for DAO Management DApp
-Detailed screen breakdown (number of screens + purpose)
-I'll propose 11 main screens (plus a set of small reusable dialogs / modals). Each screen includes required components, data sources (on-chain calls), actions, and access control notes.
+This document outlines the proposed frontend architecture, screens, and user flows for a decentralized application (DApp) that interacts with the provided smart contract suite for DAO creation and management.
+
+## 1. Detailed screen breakdown (number of screens + purpose)
+
+11 proposed main screens (plus reusable dialogs / modals). 
+Each screen includes required components, data sources (on-chain calls), actions, and access control notes.
 
 1) Landing / Home (1 screen)
 - Purpose: High-level entry to the app, discover DAOs, links to create or manage DAOs, onboarding/learn.
