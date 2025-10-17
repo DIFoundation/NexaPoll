@@ -71,17 +71,22 @@ User onboarding and gives information about the app features and how to use it.
   2. Token config: choose token type (ERC20/ERC721), tokenName, tokenSymbol, initialSupply (ERC20), maxSupply, baseURI (ERC721), initial distribution options (mint to creator).
   3. Governance params: votingDelay (blocks), votingPeriod (blocks), proposalThreshold, timelockDelay (secs; enforcement: must be >= 1 day), quorum percentage.
   4. Review & deploy: show gas estimates, confirm wallet signature, transaction to call `createDAO(...)`.
+
 - Contract calls:
   - `GovernorFactory.createDAO(...)`.
+
 - Post-deploy:
   - Show addresses returned (governor, timelock, treasury, token), link to DAO Dashboard.
+
 - UX notes:
   - Validate parameters client-side (e.g., quorum 1-100, timelock >= 1 day).
   - Show expected roles and security notes (timelock will allow anyone to execute queued actions if factory configured so).
+
 - Access control: user must be connected to wallet to pay gas.
 
-4) Proposal Creation (rich metadata) (Modal or dedicated screen)
+### Proposal Creation (rich metadata) (Modal or dedicated screen)
 - Purpose: Create on-chain proposal via `DGPGovernor.proposeWithMetadata`.
+
 - Fields:
   - Targets[] (contract addresses) — UI helper: "Call Treasury withdraw ETH", "Call Treasury withdrawToken", "Call token.mint(...)", or custom contract call builder (advanced).
   - Values[] (ETH to send)
@@ -90,21 +95,27 @@ User onboarding and gives information about the app features and how to use it.
     - Treasury: withdrawToken(tokenAddress, recipient, amount)
     - Token: mint(to, amount) or batchMint
     - Timelock role changes: grantRole/revokeRole (advanced)
+
   - Title (string)
   - Description (long text)
   - proposalType, proposedSolution, rationale, expectedOutcomes, timeline, budget (from metadata struct)
+
 - Client-side:
   - Let user build one or multiple actions in the proposal.
   - Show preview of on-chain calls (addresses + function signatures).
+
 - Contract call:
   - `DGPGovernor.proposeWithMetadata(targets, values, calldatas, title, description, ...)`
+
 - Post-create:
   - Show transaction hash and waiting for proposal to enter Active (after votingDelay blocks). Provide link to proposal page.
+
 - Access control:
   - Must have tokens >= proposalThreshold (or trust governor will reject on-chain, but can do client-side check via `DGPGovernor.proposalThreshold()`).
+
 - UX: Make it clear proposer's address cannot vote on their own proposal.
 
-5) Proposal Details + Voting (1 screen per proposal)
+### Proposal Details + Voting (1 screen per proposal)
 - Purpose: Show full proposal metadata, call list, state, votes, voting UI and timeline.
 - Top area:
   - Title, proposer, timestamp, status (Draft/Active/Passed/Failed/Queued/Executed).
