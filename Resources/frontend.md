@@ -25,16 +25,18 @@ User onboarding and gives information about the app features and how to use it.
 
 - Actions:
   - Click DAO card -> DAO Dashboard (screen 2).
-  - Click Create DAO -> Create DAO screen (screen 3).
+  - Click Create DAO -> Create DAO screen (screen 3 (wizard)).
   
 - Access control: anyone can view.
 
 ### DAO Dashboard / Overview (1 screen per DAO)
 - Purpose: Single-page hub for a DAO with tabs (Overview, Treasury, Proposals, Members, Token, Admin).
+
 - Top area:
   - DAO name, metadata (from `DAOConfig.metadataURI` or `daoDescription`), creator, createdAt.
   - Addresses: Governor, Timelock, Treasury, Token (copy to clipboard).
   - Quick stats: ETH in treasury, token totalSupply or total NFTs, member count, active proposals count, quorum percentage.
+
 - Tabs (each opens sub-area on same screen):
   - Overview (default): summary + latest proposals feed + recent activity (events from factory/governor).
   - Proposals: list + create button.
@@ -42,6 +44,7 @@ User onboarding and gives information about the app features and how to use it.
   - Members: list of members, voting power, add/remove member controls (owner-only).
   - Token: token details, minting (if you are minter/admin), transfer link.
   - Admin: advanced settings (timelock delay, role management) — owner/admin only.
+
 - Data / contract calls:
   - `GovernorFactory.getDao(daoId)` or `getAllDaos()` then filter for the current DAO.
   - `DGPGovernor.quorumPercentage()` for quorum.
@@ -50,15 +53,19 @@ User onboarding and gives information about the app features and how to use it.
   - `DGPTreasury.getETHBalance()` and `getTokenBalance(token)` for treasury balances.
   - `DGPGovernor.getProposalMetadata(proposalId)` for detailed proposal metadata.
   - Governor contract: `getVotes`, `propose`, `castVote`, `state`, `proposalSnapshot`, `proposalDeadline`, `proposalVotes` etc. (OpenZeppelin Governor interface).
+
 - Actions:
   - Create proposal -> Proposal creation flow (screen 4 or modal).
   - Add member / batch add -> modal with addresses + voting power (owner-only; call `addMember` / `batchAddMembers`).
   - Mint voting power -> call `mintVotingPower` (owner-only) or via token contract `mint` if you have MINTER_ROLE.
   - Execute queued proposals -> "Execute" button which calls timelock (anyone if executor is address(0)).
+  - Transfer token ownership -> call `transferOwnership(newOwner)` (owner-only). Optional
+
 - Access control: tab-level restrictions for owner-only features.
 
-3) Create DAO (multi-step wizard) (1 screen with multiple steps)
+### Create DAO (multi-step wizard) (1 screen with multiple steps)
 - Purpose: Create a new DAO using `GovernorFactory.createDAO`.
+
 - Steps:
   1. Basic info: daoName, daoDescription, metadataURI (optional).
   2. Token config: choose token type (ERC20/ERC721), tokenName, tokenSymbol, initialSupply (ERC20), maxSupply, baseURI (ERC721), initial distribution options (mint to creator).
