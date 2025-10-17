@@ -14,6 +14,7 @@ contract DGPTreasury {
     using SafeERC20 for IERC20;
 
     address public immutable timelock;
+    address public governor;
     
     event ETHWithdrawn(address indexed recipient, uint256 amount);
     event TokenWithdrawn(address indexed token, address indexed recipient, uint256 amount);
@@ -27,9 +28,11 @@ contract DGPTreasury {
     /**
      * @param _timelock Address of the TimelockController (not the Governor directly)
      */
-    constructor(address _timelock) {
+    constructor(address _timelock, address _governor) {
         require(_timelock != address(0), "DGPTreasury: invalid timelock address");
+        require(_governor != address(0), "DGPTreasury: invalid governor address");
         timelock = _timelock;
+        governor = _governor;
     }
 
     /**
