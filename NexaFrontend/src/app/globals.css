@@ -1,15 +1,6 @@
-@import "tailwindcss";
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +14,136 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+}
+
+.logo h1 {
+  margin-left: 10px;
+  font-size: 24px;
+}
+
+.nav a {
+  margin: 0 15px;
+  text-decoration: none;
+  color: var(--foreground);
+}
+
+.wallet button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #0070f3;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.main {
+  padding: 40px 0;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.hero h2 {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.hero p {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.cta {
+  padding: 15px 30px;
+  border: none;
+  background-color: #0070f3;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 18px;
+}
+
+.dao-list h3 {
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+
+.search-bar {
+  display: flex;
+  margin-bottom: 20px;
+}
+
+.search-bar input {
+  flex-grow: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px 0 0 5px;
+}
+
+.search-bar button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #0070f3;
+  color: white;
+  border-radius: 0 5px 5px 0;
+  cursor: pointer;
+}
+
+.dao-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.dao-card {
+  border: 1px solid #eaeaea;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.dao-card h4 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.dao-card p {
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.dao-card .details {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+}
+
+.footer {
+  text-align: center;
+  padding: 20px 0;
+  border-top: 1px solid #eaeaea;
+  margin-top: 40px;
 }
