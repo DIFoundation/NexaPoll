@@ -193,19 +193,23 @@ User onboarding and gives information about the app features and how to use it.
 
 ### Treasury (1 screen / tab)
 - Purpose: Show ETH and token balances and recent received events; also show how to propose withdrawals.
+
 - Data:
   - `DGPTreasury.getETHBalance()`
   - `DGPTreasury.getTokenBalance(token)` for known tokens
   - Treasury receive events (listen to `ETHReceived` events)
+
 - Actions:
   - The treasury withdraw functions are only callable by timelock; the UI should not directly call `withdrawETH` — instead, guide admin to create a proposal that calls treasury.withdrawETH or withdrawToken. Provide buttons to build these withdrawal calls into a proposal.
   - If a proposal that withdraws has been executed, show executed amounts.
+
 - UX:
   - Present common withdraw template: recipient address, amount (with max), token selector.
   - Provide safety checks: show treasury balance and warn when requested amount exceeds balance.
+
 - Access control: withdraw must be via proposals queued/executed by timelock; only show "Create withdraw proposal" option to proposer-eligible addresses (or any address; governor will reject if not permitted).
 
-9) Proposal Execution & Timelock Queue Page (1 screen / area)
+### Proposal Execution & Timelock Queue Page (1 screen / area)
 - Purpose: Show queued proposals, ETA, and include Execute button when delay expired.
 - Data:
   - Use `DGPGovernor.proposalNeedsQueuing` / `state` to detect queued proposals; Timelock events show queued operations with their scheduled timestamps.
