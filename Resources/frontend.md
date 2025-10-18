@@ -211,38 +211,49 @@ User onboarding and gives information about the app features and how to use it.
 
 ### Proposal Execution & Timelock Queue Page (1 screen / area)
 - Purpose: Show queued proposals, ETA, and include Execute button when delay expired.
+
 - Data:
   - Use `DGPGovernor.proposalNeedsQueuing` / `state` to detect queued proposals; Timelock events show queued operations with their scheduled timestamps.
   - Show ETA (queue timestamp + minDelay). The timelock contract has events (CallScheduled, CallExecuted).
+  
 - Actions:
   - Execute queued call(s) — call `timelock.execute(...)` or Governor wrapper `execute`.
   - Cancel (if allowed) — governor may support cancel.
+
 - Access control: may be executable by anyone if executor role = address(0), otherwise only allowed executors.
 
-10) DAO Admin / Roles & Settings (1 screen / tab)
+### DAO Admin / Roles & Settings (1 screen / tab)
 - Purpose: For owner: manage the timelock admin role, change governor params, and other admin-only checks.
+
 - Visible items:
   - Timelock minDelay view (not directly modifiable on chain except via admin roles).
   - Role management UI: display current role holders (PROPOSER_ROLE, EXECUTOR_ROLE, DEFAULT_ADMIN_ROLE).
   - Buttons to propose role changes via governor/timelock (advanced).
+
 - Contract calls:
   - `timelockContract.hasRole(role, addr)`, `timelockContract.getRoleMemberCount` if implemented (TimelockController uses AccessControl so has `getRoleMemberCount`).
   - `DGPGovernor.quorumPercentage()` (show current).
   - `DGPGovernor.proposalThreshold()` and ability to propose adjustments (governor settings are changeable only by owner or via governance depending on implementation).
+
 - Access control: owner-only features.
 
-11) User Profile / Wallet Dashboard (1 screen)
+### User Profile / Wallet Dashboard (1 screen)
 - Purpose: For connected user: show their DAOs involvement, tokens held, vote history.
+
 - Data:
   - `GovernorFactory.getDaosByCreator(address)` to show created DAOs.
   - Scan known DAOs for `votingToken.balanceOf(user)` or use events to compute contributions/membership.
   - Vote history via `VoteCast` events filtered by user address across governors (indexer recommended).
+
 - Actions:
   - Quick links to DAO dashboards, pending votes, proposals to vote on.
+
 - UX:
   - Show notifications: proposals awaiting user's vote, queued proposals ready to execute, treasury requests.
 
-Shared UI pieces & modals (reusable)
+- Access control: user must connect wallet. If not connected, show "Connect Wallet" button.
+
+## 2. Shared UI pieces & modals (reusable)
 - Connect Wallet modal (MetaMask / WalletConnect)
 - Confirm transaction modal (gas estimate)
 - Propose call builder (for building call target + function + args)
@@ -251,7 +262,7 @@ Shared UI pieces & modals (reusable)
 - Proposal preview modal
 - Role check & instructions modal (explains permissions & next steps)
 
-Routing & navigation
+## 2. Routing & navigation
 - Routes:
   - / — Landing/Home
   - /daos — DAOs list (alias to home with filters)
@@ -328,11 +339,3 @@ Deliverables I can produce next (choose one)
 
 What's next (concrete)
 - Tell me which deliverable you'd like next. If you want code, I can scaffold the routes and components in src and wire basic on-chain calls (using ethers or wagmi). If you prefer a design-first approach, I can produce a component spec and JSON describing props and API calls.
-
-If you want, I can immediately scaffold:
-- /daos page (list)
-- /dao/[governorAddress] dashboard
-- Create DAO wizard skeleton
-and wire them to call `GovernorFactory.getAllDaos()` and `createDAO` using ethers.js and a small provider wrapper.
-
-Would you like me to scaffold pages/components now or produce a concise Figma-like component spec first?
