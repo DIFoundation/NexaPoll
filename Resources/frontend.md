@@ -273,13 +273,17 @@ User onboarding and gives information about the app features and how to use it.
   - /create-dao — Create DAO wizard
   - /profile — User profile
 
+
+
+# Backend Related
+
 ## Data and backend considerations
 - On-chain RPC only is possible but:
   - For lists (all DAOs, proposals, votes) a direct contract call is possible for DAOs (factory returns array), but proposals and votes across many governors may need an indexer (TheGraph) for good UX.
   - Proposal events: use Governor events (ProposalCreated, VoteCast, ProposalQueued, ProposalExecuted). Without an indexer, frontend can read events via provider.getLogs but this is slow for many DAOs; consider adding a light server or TheGraph subgraph later.
 - For token metadata (ERC721 baseURI), fetch tokenURI via the token contract.
 
-Edge cases and UX defensive checks
+## Edge cases and UX defensive checks
 - Proposer cannot vote on own proposal (enforce in UI and show message).
 - Time-based values: votingDelay and votingPeriod in blocks — translate to estimated time using average block time for the network; show both block counts and friendly durations.
 - Token types: handle both ERC20 and ERC721 tokens gracefully.
@@ -287,7 +291,7 @@ Edge cases and UX defensive checks
 - Handling large DAO lists: add pagination or search; avoid loading all DAOs if `getAllDaos` returns thousands.
 - Offline operations: let proposers prepare calldatas and save drafts locally.
 
-Minimal contract call list for frontend devs (per screen)
+## Minimal contract call list for frontend devs (per screen)
 - Factory:
   - getAllDaos(), getDao(daoId), createDAO(...)
   - getDaosByCreator(address)
