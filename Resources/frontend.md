@@ -281,36 +281,46 @@ User onboarding and gives information about the app features and how to use it.
 - On-chain RPC only is possible but:
   - For lists (all DAOs, proposals, votes) a direct contract call is possible for DAOs (factory returns array), but proposals and votes across many governors may need an indexer (TheGraph) for good UX.
   - Proposal events: use Governor events (ProposalCreated, VoteCast, ProposalQueued, ProposalExecuted). Without an indexer, frontend can read events via provider.getLogs but this is slow for many DAOs; consider adding a light server or TheGraph subgraph later.
+
 - For token metadata (ERC721 baseURI), fetch tokenURI via the token contract.
 
 ## Edge cases and UX defensive checks
 - Proposer cannot vote on own proposal (enforce in UI and show message).
+
 - Time-based values: votingDelay and votingPeriod in blocks — translate to estimated time using average block time for the network; show both block counts and friendly durations.
+
 - Token types: handle both ERC20 and ERC721 tokens gracefully.
+
 - Role & permission errors: show human-friendly error messages when a transaction reverts (e.g., "Only owner may add members").
+
 - Handling large DAO lists: add pagination or search; avoid loading all DAOs if `getAllDaos` returns thousands.
+
 - Offline operations: let proposers prepare calldatas and save drafts locally.
 
 ## Minimal contract call list for frontend devs (per screen)
 - Factory:
   - getAllDaos(), getDao(daoId), createDAO(...)
   - getDaosByCreator(address)
+
 - Governor:
   - proposeWithMetadata(...), propose(...), state(proposalId), proposalSnapshot, proposalDeadline
   - getProposalMetadata(proposalId)
   - castVote, castVoteWithReason, listMembers, addMember, batchAddMembers, removeMember, mintVotingPower
   - quorumPercentage(), proposalThreshold()
+
 - Timelock:
   - ROLE checks: hasRole(role, address), grantRole/revokeRole (via proposals)
   - Execute / queue related functions (timelock.execute, timelock.schedule; use GovernorTimelockControl wrappers)
+
 - Treasury:
   - getETHBalance(), getTokenBalance(token)
   - withdrawETH(recipient, amount) and withdrawToken(token, recipient, amount) — only via timelock proposals
+
 - Tokens:
   - ERC20: mint, batchMint, balanceOf, totalSupply, maxSupply, hasRole
   - ERC721: mint, batchMint, totalSupply, maxSupply, setBaseURI, tokenURI, hasRole
 
-Wireframe & component guidance (visual)
+## Wireframe & component guidance (visual)
 - Design topbar with wallet connect & network, main nav with DAOs / Create DAO / Profile
 - DAO card: left column token icon, middle DAO name & description, right quick stats & buttons
 - Proposal list: table or timeline with badges for state (Active/Queued/Executed/Failed)
