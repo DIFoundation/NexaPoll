@@ -117,36 +117,45 @@ User onboarding and gives information about the app features and how to use it.
 
 ### Proposal Details + Voting (1 screen per proposal)
 - Purpose: Show full proposal metadata, call list, state, votes, voting UI and timeline.
+
 - Top area:
   - Title, proposer, timestamp, status (Draft/Active/Passed/Failed/Queued/Executed).
   - Metadata fields: proposalType, proposedSolution, rationale, expectedOutcomes, timeline, budget.
+
 - Call list:
   - Show each target address + function signature + arguments + ETH value.
+
 - Voting status:
   - ForVotes, AgainstVotes, quorumReachedPct (uses `getProposalMetadata`).
   - Voting start block (snapshot) and end block (deadline) via `proposalSnapshot` and `proposalDeadline`.
   - Current Open/Closed state via `DGPGovernor.state(proposalId)`.
+
 - Voting UI:
   - If Active: show three options (For, Against, Abstain) and optional reason field. Use `castVoteWithReason` if including reason; else `castVote`.
   - Disable vote if msg.sender == proposer (contract forbids creator from voting).
   - Show user's voting power (call `votingToken.getVotes(address)` or `getPastVotes` at snapshot block).
+
 - Queue/Execute:
   - If Succeeded: allow queuing (if governance requires queue) — this may be automatic inside governor. Provide button to queue (call governor queue methods; often require Governor to schedule the call through timelock). If already queued and delay passed: show Execute button to call governor.execute or timelock.execute as appropriate; if executor role is address(0), anyone may execute.
   - Show timelock ETA and remaining time.
+
 - Events / history:
   - Show list of state transitions, ballot records (optionally fetch `VoteCast` events).
+
 - Data / contract calls:
   - `DGPGovernor.getProposalMetadata(proposalId)`
   - `DGPGovernor.state(proposalId)`, `proposalSnapshot(proposalId)`, `proposalDeadline(proposalId)`, `proposalVotes(proposalId)`
   - `votingToken.getPastVotes(account, snapshot)`, `votingToken.getVotes(account)` depending on token type
   - `DGPGovernor.castVote` / `castVoteWithReason`
   - `GovernorTimelockControl` queue and execute flows (may be wrapped by Governor methods)
+
 - Edge cases:
   - If the token is ERC721, voting power per token matters (voters need to own NFTs).
   - If proposals have multiple calldatas, ensure correct ordering and display.
+
 - Access control: Anyone can view. Voting only if you hold voting tokens and it's Active; proposers cannot vote.
 
-6) Members Management (sub-screen under DAO) (1 screen / tab)
+### Members Management (sub-screen under DAO) (1 screen / tab)
 - Purpose: Admin-only page to manage member list and mint voting power.
 - Features:
   - List of members: address, current voting power, member status.
