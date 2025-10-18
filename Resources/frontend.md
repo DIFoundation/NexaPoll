@@ -339,11 +339,3 @@ Deliverables I can produce next (choose one)
 
 What's next (concrete)
 - Tell me which deliverable you'd like next. If you want code, I can scaffold the routes and components in src and wire basic on-chain calls (using ethers or wagmi). If you prefer a design-first approach, I can produce a component spec and JSON describing props and API calls.
-
-If you want, I can immediately scaffold:
-- /daos page (list)
-- /dao/[governorAddress] dashboard
-- Create DAO wizard skeleton
-and wire them to call `GovernorFactory.getAllDaos()` and `createDAO` using ethers.js and a small provider wrapper.
-
-Would you like me to scaffold pages/components now or produce a concise Figma-like component spec first?
