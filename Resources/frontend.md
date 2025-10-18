@@ -322,12 +322,16 @@ User onboarding and gives information about the app features and how to use it.
 
 ## Wireframe & component guidance (visual)
 - Design topbar with wallet connect & network, main nav with DAOs / Create DAO / Profile
+
 - DAO card: left column token icon, middle DAO name & description, right quick stats & buttons
+
 - Proposal list: table or timeline with badges for state (Active/Queued/Executed/Failed)
+
 - Proposal page: left column details (metadata + calls), right column votes & actions
+
 - Use copy-to-clipboard for all addresses; add Etherscan/Block explorer links
 
-Testing & dev checklist (priority order)
+## Testing & dev checklist (priority order)
 1. Integrate wallet connection (wagmi / ethers.js). Ensure network is set to the network where factory is deployed.
 2. Build DAO list page using `getAllDaos`. Verify entries match on-chain.
 3. Implement Create DAO wizard and test on local / testnet using factory.
@@ -339,17 +343,8 @@ Testing & dev checklist (priority order)
 9. Add event listeners / optional TheGraph to index proposals and votes for improved UX.
 10. Add full error handling, confirmations, and transaction state feedback.
 
-Security & UX notes
+## Security & UX notes
 - Always confirm parameter values before sending a transaction (especially for propose with calldatas).
 - Show the exact calldata and recipient addresses in the proposal preview to reduce malicious submissions.
 - Encourage usage of timelock long enough (>= 1 day enforced by factory) to allow off-chain review.
 - For production, consider backend indexing or TheGraph for listing proposals and vote histories.
-
-Deliverables I can produce next (choose one)
-- Full screen/component breakdown in Figma-like detail (props, states per component).
-- Example Next.js pages + React components wiring (skeleton) matching the proposed routes and contract calls.
-- A small integration example: DAO list + DAO dashboard + Proposal creation flow using wagmi/ethers.
-- TheGraph subgraph manifest for indexing DAOs and proposals.
-
-What's next (concrete)
-- Tell me which deliverable you'd like next. If you want code, I can scaffold the routes and components in src and wire basic on-chain calls (using ethers or wagmi). If you prefer a design-first approach, I can produce a component spec and JSON describing props and API calls.
