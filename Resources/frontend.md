@@ -273,7 +273,7 @@ User onboarding and gives information about the app features and how to use it.
   - /create-dao — Create DAO wizard
   - /profile — User profile
 
-Data and backend considerations
+## Data and backend considerations
 - On-chain RPC only is possible but:
   - For lists (all DAOs, proposals, votes) a direct contract call is possible for DAOs (factory returns array), but proposals and votes across many governors may need an indexer (TheGraph) for good UX.
   - Proposal events: use Governor events (ProposalCreated, VoteCast, ProposalQueued, ProposalExecuted). Without an indexer, frontend can read events via provider.getLogs but this is slow for many DAOs; consider adding a light server or TheGraph subgraph later.
