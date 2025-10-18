@@ -157,33 +157,41 @@ User onboarding and gives information about the app features and how to use it.
 
 ### Members Management (sub-screen under DAO) (1 screen / tab)
 - Purpose: Admin-only page to manage member list and mint voting power.
+
 - Features:
   - List of members: address, current voting power, member status.
   - Add member: single or batch add addresses + mint amounts -> calls `addMember` or `batchAddMembers`.
   - Remove member: owner-only `removeMember`.
   - Mint voting power: `mintVotingPower(to, amount)` for owner to top-up members.
+
 - Data / contract calls:
   - `DGPGovernor.listMembers()`, token contract `balanceOf(address)` for each member.
   - `DGPGovernor.addMember`, `batchAddMembers`, `removeMember`, `mintVotingPower`.
+
 - Access control: only owner/admin (check via `DGPGovernor.owner()` or by checking whether current address equals owner).
 
-7) Token Details & Minting (1 screen / tab)
+### Token Details & Minting (1 screen / tab)
 - Purpose: Show token details and actions for minters/admins.
+
 - Data:
   - If ERC20: name, symbol, totalSupply, maxSupply, token address, balanceOf current user.
   - If ERC721: totalSupply, maxSupply, baseURI, list of owned tokenIds (call `tokenOfOwnerByIndex` if available or index via events).
+
 - Actions:
   - Mint (if user has MINTER_ROLE): token.mint(to, amount) or batchMint.
   - Set baseURI (ERC721 admin-only).
   - Transfer tokens (user wallet interactions via standard token transfer).
+
 - Contract calls:
   - `ERC20VotingPower.mint`, `batchMint`, `setMinter` (admin)
   - `ERC721VotingPower.mint`, `batchMint`, `setMinter`, `setBaseURI`
+
 - UI notes:
   - Show role check: use `ERC20/721.hasRole(MINTER_ROLE, address)`, and `hasRole(DEFAULT_ADMIN_ROLE, address)`. Access via contract `hasRole(bytes32 role, address account)` (ABI call).
+
 - Access control: actions available only to addresses with correct roles.
 
-8) Treasury (1 screen / tab)
+### Treasury (1 screen / tab)
 - Purpose: Show ETH and token balances and recent received events; also show how to propose withdrawals.
 - Data:
   - `DGPTreasury.getETHBalance()`
