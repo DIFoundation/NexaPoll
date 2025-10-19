@@ -1,5 +1,5 @@
-import { Header } from '../../components/Header';
-import { Footer } from '../../components/Footer';
+import Header from '@/components/Header';
+// import { Footer } from '../../components/Footer';
 
 export default function DAOsPage() {
   return (
@@ -20,7 +20,7 @@ export default function DAOsPage() {
           </div>
         </div>
       </main>
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 }
