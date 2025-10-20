@@ -1,29 +1,47 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { CustomNetworkButton } from "./CustomNetworkButton";
 import { CustomConnectButton } from "./CustomConnectButton";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { isConnected } = useAppKitAccount();
 
-  const navLinks = [
+  // Common links that are always visible
+  const commonLinks = [
     { name: "Home", path: "/" },
-    { name: "Polls", path: "/polls" },
-    { name: "Create", path: "/create" },
     { name: "About", path: "/about" },
   ];
 
+  // Links that are only visible when connected
+  const connectedLinks = [
+    { name: "Polls", path: "/polls" },
+    { name: "Create", path: "/create" },
+  ];
+
+  // Combine links based on connection state
+  const navLinks = isConnected 
+    ? [...commonLinks, ...connectedLinks] 
+    : commonLinks;
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
-      
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex items-center">
             <Link href="/" className="flex-shrink-0 flex items-center">
+              <Image
+                src="/NexaPoll.png"
+                alt="NexaPoll"
+                width={100}
+                height={100}
+                className="rounded-full object-contain h-16 w-16"
+              />
               <span className="text-xl font-bold text-blue-600">NexaPoll</span>
             </Link>
             <nav className="hidden md:ml-6 md:flex md:space-x-8">
@@ -41,7 +59,6 @@ const Header = () => {
                 </Link>
               ))}
             </nav>
-          </div>
 
           <div className="hidden md:ml-4 md:flex-shrink-0 md:flex md:items-center space-x-2">
             <CustomConnectButton />
@@ -101,23 +118,21 @@ const Header = () => {
               <Link
                 key={link.path}
                 href={link.path}
-                onClick={() => setIsMenuOpen(false)}
                 className={`${
                   pathname === link.path
-                    ? "bg-indigo-50 border-indigo-500 text-indigo-700"
-                    : "border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800"
+                    ? "bg-blue-50 border-blue-500 text-blue-700"
+                    : "border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
                 } block pl-3 pr-4 py-2 border-l-4 text-base font-medium`}
+                onClick={() => setIsMenuOpen(false)}
               >
                 {link.name}
               </Link>
             ))}
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200">
-            <div className="flex items-center justify-between px-4">
-              <div className="ml-3">
-                <CustomNetworkButton />
-              </div>
+            <div className="flex items-center px-4 space-x-2">
               <CustomConnectButton />
+              <CustomNetworkButton />
             </div>
           </div>
         </div>
