@@ -46,6 +46,7 @@ const Header = () => {
           <div className="hidden md:ml-4 md:flex-shrink-0 md:flex md:items-center">
             <CustomConnectButton />
             <CustomNetworkButton />
+            <appkit-network-button />
           </div>
 
           {/* Mobile menu button */}
