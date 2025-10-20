@@ -1,13 +1,12 @@
 "use client";
 
 import { ExternalLink } from 'lucide-react';
-import { siGithub, siX, siDiscord, siTelegram, siMedium } from 'simple-icons/icons';
+import { siGithub, siX, siDiscord, siTelegram } from 'simple-icons/icons';
 
 // Helper function to convert simple-icons to React components
 interface IconProps {
   path: string;
   title?: string;
-  [key: string]: any; // For any additional properties that might be present
 }
 
 interface SimpleIconProps {
@@ -115,15 +114,6 @@ export default function Footer() {
                   aria-label="Telegram"
                 >
                   <SimpleIcon icon={siTelegram} className="w-5 h-5" />
-                </a>
-                <a 
-                  href="https://medium.com/yourblog" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-gray-400 hover:text-white transition-colors"
-                  aria-label="Medium"
-                >
-                  <SimpleIcon icon={siMedium} className="w-5 h-5" />
                 </a>
               </div>
             </div>
