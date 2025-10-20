@@ -8,6 +8,8 @@ interface CustomButtonProps {
   onClick?: () => void
   disabled?: boolean
   variant?: "primary" | "secondary"
+  icon?: React.ReactNode
+  iconPosition?: "left" | "right"
 }
 
 export const CustomButton: React.FC<CustomButtonProps> = ({
@@ -15,6 +17,8 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   onClick,
   disabled,
   variant = "primary",
+  icon,
+  iconPosition = "left",
 }) => {
   return (
     <button
@@ -32,7 +36,9 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
         disabled:opacity-60 disabled:cursor-not-allowed
       `}
     >
+      {iconPosition === "left" && icon}
       {label}
+      {iconPosition === "right" && icon}
     </button>
   )
 }
