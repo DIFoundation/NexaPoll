@@ -6,11 +6,12 @@ import { CustomButton } from "./ui/CustomButton"
 
 export function CustomNetworkButton() {
   const { open } = useAppKit()
-  const { chainId } = useAppKitNetwork()
+  const { caipNetwork } = useAppKitNetwork()
 
   return (
     <CustomButton
-      label={chainId ? chainId.toString() : "Select Network"}
+      
+      label={caipNetwork ? caipNetwork.name : "Select Network"}
       onClick={() => open({ view: "Networks" })}
       variant="secondary"
     />
