@@ -43,10 +43,9 @@ const Header = () => {
             </nav>
           </div>
 
-          <div className="hidden md:ml-4 md:flex-shrink-0 md:flex md:items-center">
+          <div className="hidden md:ml-4 md:flex-shrink-0 md:flex md:items-center space-x-2">
             <CustomConnectButton />
             <CustomNetworkButton />
-            <appkit-network-button />
           </div>
 
           {/* Mobile menu button */}
