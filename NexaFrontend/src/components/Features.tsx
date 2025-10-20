@@ -22,8 +22,8 @@ const features = [
   },
   {
     icon: Vote,
-    title: "Advanced Governance",
-    description: "Create and vote on proposals with rich metadata. Support for timelock delays, quorum requirements, and democratic decision-making.",
+    title: "Democratic Governance",
+    description: "Create and vote on proposals with rich metadata. Support for timelock delays, quorum requirements, and transparent decision-making.",
     color: "text-green-600 bg-green-100"
   },
   {
@@ -33,18 +33,6 @@ const features = [
     color: "text-purple-600 bg-purple-100"
   },
   {
-    icon: Users,
-    title: "Member Management",
-    description: "Add and remove members, manage voting power, and track participation. Built-in role-based access control for administrators.",
-    color: "text-orange-600 bg-orange-100"
-  },
-  {
-    icon: Coins,
-    title: "Token-Based Voting",
-    description: "Support for both ERC20 and ERC721 voting tokens. Flexible token distribution and minting capabilities for governance participation.",
-    color: "text-yellow-600 bg-yellow-100"
-  },
-  {
     icon: Shield,
     title: "Security First",
     description: "Built on battle-tested OpenZeppelin contracts with timelock protection, role-based permissions, and transparent execution.",
@@ -52,14 +40,6 @@ const features = [
   }
 ];
 
-const additionalFeatures = [
-  "On-chain proposal metadata with detailed descriptions",
-  "Automated proposal execution after timelock delays",
-  "Multi-signature treasury operations", 
-  "Real-time voting power calculations",
-  "Event-driven notification system",
-  "Cross-chain compatibility support"
-];
 
 export default function Features() {
   return (
@@ -77,7 +57,7 @@ export default function Features() {
         </div>
 
         {/* Main features grid */}
-        <div className="grid gap-12 lg:grid-cols-3 md:grid-cols-2 mb-20">
+        <div className="grid gap-8 lg:grid-cols-4 md:grid-cols-2">
           {features.map((feature, index) => {
             const IconComponent = feature.icon;
             return (
@@ -98,48 +78,6 @@ export default function Features() {
           })}
         </div>
 
-        {/* Additional features list */}
-        <div className="bg-white rounded-2xl p-8 shadow-sm">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">
-                Advanced Capabilities
-              </h3>
-              <div className="space-y-4">
-                {additionalFeatures.map((feature, index) => (
-                  <div key={index} className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 flex-shrink-0" />
-                    <span className="text-gray-700">{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-xl p-8">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="text-center">
-                  <FileText className="h-8 w-8 text-blue-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">99.9%</div>
-                  <div className="text-sm text-gray-600">Uptime</div>
-                </div>
-                <div className="text-center">
-                  <Clock className="h-8 w-8 text-green-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">&lt;2s</div>
-                  <div className="text-sm text-gray-600">Response</div>
-                </div>
-                <div className="text-center">
-                  <Settings className="h-8 w-8 text-purple-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">100%</div>
-                  <div className="text-sm text-gray-600">Customizable</div>
-                </div>
-                <div className="text-center">
-                  <Shield className="h-8 w-8 text-red-600 mx-auto mb-2" />
-                  <div className="text-2xl font-bold text-gray-900">0</div>
-                  <div className="text-sm text-gray-600">Exploits</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
