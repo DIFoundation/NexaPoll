@@ -1,5 +1,4 @@
 'use client'
-import { AppKitConnectButton } from '@reown/appkit/react'
 import React from 'react'
 
 function Header() {
@@ -12,28 +11,9 @@ function Header() {
 
       <div>
         <p>2</p>
-        <appkit-modal />
-      </div>
-
-      <div>
-        <p>3</p>
-        <appkit-connect-button />
-      </div>
-
-      <div>
-        <p>4</p>
         <appkit-network-button />
       </div>
 
-      <div>
-        <p>5</p>
-        <appkit-account-button />
-      </div>
-
-      <div>
-        <p>6</p>
-        <AppKitConnectButton />
-      </div>
     </div>
   )
 }
