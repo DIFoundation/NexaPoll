@@ -77,6 +77,7 @@ const Header = () => {
                 </button>
               </div>
             </div>
+            <appkit-button />
           </div>
 
           {/* Mobile menu button */}
