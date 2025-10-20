@@ -13,38 +13,24 @@ import {
 const steps = [
   {
     step: "01",
-    icon: Wallet,
-    title: "Connect Wallet",
-    description: "Connect your Web3 wallet to get started. Support for MetaMask, WalletConnect, and other popular wallets.",
-    details: ["MetaMask integration", "WalletConnect support", "Multi-chain compatibility"]
+    icon: Settings,
+    title: "Create Your DAO",
+    description: "Connect your wallet and configure your DAO with governance parameters, token settings, and member management.",
+    details: ["One-click setup", "Flexible configuration", "Multi-token support"]
   },
   {
-    step: "02", 
-    icon: Settings,
-    title: "Configure DAO",
-    description: "Set up your DAO parameters including governance settings, token type, and treasury configuration.",
-    details: ["Choose ERC20 or ERC721 tokens", "Set voting parameters", "Configure timelock delays"]
+    step: "02",
+    icon: Vote,
+    title: "Propose & Vote",
+    description: "Submit proposals for treasury withdrawals, member changes, or custom actions. Members vote democratically.",
+    details: ["Rich proposals", "Democratic voting", "Quorum protection"]
   },
   {
     step: "03",
-    icon: Users,
-    title: "Add Members",
-    description: "Invite members to your DAO and distribute voting power through token allocation or NFT minting.",
-    details: ["Batch member addition", "Flexible voting power", "Role-based permissions"]
-  },
-  {
-    step: "04",
-    icon: Vote,
-    title: "Create Proposals",
-    description: "Submit governance proposals with rich metadata including treasury withdrawals, member changes, and custom actions.",
-    details: ["Rich proposal metadata", "Multi-action proposals", "Automated execution"]
-  },
-  {
-    step: "05",
     icon: Coins,
-    title: "Vote & Execute",
-    description: "Members vote on proposals and successful ones are automatically queued and executed through the timelock.",
-    details: ["Democratic voting", "Quorum requirements", "Transparent execution"]
+    title: "Execute Decisions",
+    description: "Approved proposals are automatically queued and executed through secure timelock mechanisms.",
+    details: ["Automated execution", "Timelock security", "Transparent process"]
   }
 ];
 
@@ -68,7 +54,7 @@ export default function HowItWorks() {
           {/* Connection line for desktop */}
           <div className="hidden lg:block absolute top-32 left-0 right-0 h-0.5 bg-gray-200"></div>
           
-          <div className="grid gap-8 lg:grid-cols-5 md:grid-cols-3 sm:grid-cols-2">
+          <div className="grid gap-8 lg:grid-cols-3 md:grid-cols-3 sm:grid-cols-1">
             {steps.map((step, index) => {
               const IconComponent = step.icon;
               return (
