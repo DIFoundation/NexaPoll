@@ -9,12 +9,16 @@ export function CustomConnectButton() {
   const { isConnected, address } = useAppKitAccount()
 
   const handleClick = () => {
-    open({ view: "Account" })
+    if (isConnected) {
+      open({ view: "Account" })
+    } else {
+      open({ view: "Connect" })
+    }
   }
 
   return (
     <CustomButton
-      label={isConnected ? `${address?.slice(0, 6)}...${address?.slice(-4)}` : "Connect---==---Wallet"}
+      label={isConnected ? `${address?.slice(0, 6)}...${address?.slice(-4)}` : "Connect Wallet"}
       onClick={handleClick}
       variant="primary"
     />

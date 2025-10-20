@@ -1,21 +1,26 @@
 // components/CustomNetworkButton.tsx
 "use client";
 
-import { useAppKit } from "@reown/appkit/react";
-import { useChainId, useAccount } from "wagmi";
+import { useAppKit, useAppKitNetwork } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
 import { celoSepolia, baseSepolia } from "viem/chains";
 import { CustomButton } from "./ui/CustomButton";
 import Image from "next/image";
 
 export function CustomNetworkButton() {
   const { open } = useAppKit();
-  const chainId = useChainId();
   const { isConnected } = useAccount();
+
+  const { chainId: appKitChainId } = useAppKitNetwork();
+
+  const handleClick = () => {
+    open({ view: "Networks" });
+  };
 
   return (
     <CustomButton
       icon={
-        chainId === celoSepolia.id ? (
+        appKitChainId === celoSepolia.id ? (
           <Image
             src="/celo.png"
             alt="Celo Sepolia"
@@ -23,7 +28,7 @@ export function CustomNetworkButton() {
             height={24}
             className="rounded-full object-contain mr-1"
           />
-        ) : chainId === baseSepolia.id ? (
+        ) : appKitChainId === baseSepolia.id ? (
           <Image
             src="/base.png"
             alt="Base Sepolia"
@@ -34,15 +39,15 @@ export function CustomNetworkButton() {
         ) : null
       }
       label={
-        chainId === celoSepolia.id
+        appKitChainId === celoSepolia.id
           ? "Celo Sepolia"
-          : chainId === baseSepolia.id
+          : appKitChainId === baseSepolia.id
           ? "Base Sepolia"
           : isConnected
           ? "Unsupported Network"
           : "Select Network"
       }
-      onClick={() => open({ view: "Networks" })}
+      onClick={handleClick}
       variant="secondary"
     />
   );
