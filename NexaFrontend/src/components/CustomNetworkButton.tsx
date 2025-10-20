@@ -6,16 +6,26 @@ import { useAccount } from "wagmi";
 import { celoSepolia, baseSepolia } from "viem/chains";
 import { CustomButton } from "./ui/CustomButton";
 import Image from "next/image";
+import { useEffect } from "react";
 
 export function CustomNetworkButton() {
-  const { open } = useAppKit();
+  const { open, close } = useAppKit();
   const { isConnected } = useAccount();
-
   const { chainId: appKitChainId } = useAppKitNetwork();
 
   const handleClick = () => {
     open({ view: "Networks" });
   };
+
+  useEffect(() => {
+    // Listen for network change events
+    close();
+    // Close the modal when network changes
+    const modal = document.querySelector('appkit-modal[data-view="Networks"]');
+    if (modal) {
+      modal.remove();
+    }
+  }, [close]);
 
   return (
     <CustomButton
