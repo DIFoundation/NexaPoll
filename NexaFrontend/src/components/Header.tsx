@@ -37,7 +37,7 @@ const Header = () => {
         <div className="flex justify-between h-16">
             <Link href="/" className="flex-shrink-0 flex items-center">
               <Image
-                src="/NexaPoll.png"
+                src="/NexaPollCircle.png"
                 alt="NexaPoll"
                 width={100}
                 height={100}
