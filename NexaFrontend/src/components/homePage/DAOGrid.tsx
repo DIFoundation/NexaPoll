@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { dummyDAOs } from '@/lib/daoData';
 import { getActiveProposals } from '@/lib/proposalData';
-import { Search, ArrowUpRight, Users, FileText, Clock, TrendingUp, Zap, Sparkles, X, Filter } from 'lucide-react';
+import { Search, Users, FileText, Clock, TrendingUp, Zap, Sparkles, X, Filter } from 'lucide-react';
 import Link from 'next/link';
 import { useDAOFilters } from '@/hooks/useDAOFilters';
+import Image from 'next/image';
 
 // Memoize the DAO card component to prevent unnecessary re-renders
 const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
@@ -36,7 +37,7 @@ const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
   }, [dao.status]);
 
   const activeProposals = useMemo(() => getActiveProposals(dao.id), [dao.id]);
-  
+
   const getCategoryColor = useCallback((category: string) => {
     const colors: Record<string, string> = {
       defi: 'bg-blue-100 text-blue-800',
@@ -56,15 +57,26 @@ const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
           <div className="flex items-center space-x-4">
             <div className="flex-shrink-0">
               <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
-                {/* Replace with actual logo */}
-                <span className="text-gray-500 text-xl font-medium">
-                  {dao.name.charAt(0)}
-                </span>
+                <Link
+                  href={`/${dao.name}`}
+                  className="text-blue-600 hover:text-blue-800 transition-colors"
+                  aria-label={`View ${dao.name} details`}
+                >
+                  <span className="text-gray-500 text-xl font-medium">
+                    {dao.name.charAt(0) || <Image src={dao.logo} alt={dao.name} width={48} height={48} />}
+                  </span>
+                </Link>
               </div>
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="text-lg font-semibold text-gray-900">{dao.name}</h3>
+              <div className="flex items-center space-x-2 justify-between">
+                <Link
+                  href={`/${dao.name}`}
+                  className="text-blue-600 hover:text-blue-800 transition-colors"
+                  aria-label={`View ${dao.name} details`}
+                >
+                  <h3 className="text-lg font-semibold text-gray-900">{dao.name}</h3>
+                </Link>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.border}`}>
                   {statusBadge.icon}
                   {statusBadge.label}
@@ -73,13 +85,6 @@ const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
               <p className="mt-1 text-sm text-gray-500 line-clamp-2">{dao.description}</p>
             </div>
           </div>
-          <Link 
-            href={`/daos/${dao.id}`}
-            className="text-blue-600 hover:text-blue-800 transition-colors"
-            aria-label={`View ${dao.name} details`}
-          >
-            <ArrowUpRight className="h-5 w-5" />
-          </Link>
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -263,11 +268,10 @@ const DAOGrid: React.FC = () => {
                       key={option.id}
                       type="button"
                       onClick={() => setSelectedCategory(option.id)}
-                      className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg border ${
-                        selectedCategory === option.id
+                      className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg border ${selectedCategory === option.id
                           ? 'bg-blue-50 border-blue-500 text-blue-700'
                           : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <span>{option.label}</span>
                       <span className="ml-2 text-xs font-medium text-gray-500">
@@ -287,11 +291,10 @@ const DAOGrid: React.FC = () => {
                       key={status.id}
                       type="button"
                       onClick={() => toggleStatus(status.id)}
-                      className={`inline-flex items-center px-3 py-2 text-sm rounded-full border ${
-                        selectedStatus.includes(status.id)
+                      className={`inline-flex items-center px-3 py-2 text-sm rounded-full border ${selectedStatus.includes(status.id)
                           ? `${status.color.replace('bg-', 'bg-opacity-20 border-')} ${status.color.replace('bg-', 'text-')}`
                           : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-                      }`}
+                        }`}
                     >
                       <span className={`w-2 h-2 rounded-full ${status.color} mr-2`}></span>
                       {status.label}
@@ -334,7 +337,7 @@ const DAOGrid: React.FC = () => {
                     const status = statusOptions.find(s => s.id === statusId);
                     if (!status) return null;
                     return (
-                      <span 
+                      <span
                         key={statusId}
                         className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${status.color.replace('bg-', 'bg-opacity-20 ')} ${status.color.replace('bg-', 'text-')}`}
                       >
