@@ -169,7 +169,7 @@ const DAOGrid: React.FC<DAOGridProps> = ({
     return filterDAOs({
       category: selectedCategory,
       status: selectedStatus,
-      searchQuery,
+      searchQuery: searchQuery.trim(),
     });
   }, [searchQuery, selectedCategory, selectedStatus]);
 
@@ -182,7 +182,7 @@ const DAOGrid: React.FC<DAOGridProps> = ({
         setFilteredDAOs(memoizedFilteredDAOs);
         setIsLoading(false);
       }
-    }, 100); // Reduced delay for better UX
+    }, 100);
 
     return () => {
       isMounted = false;

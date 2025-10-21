@@ -1,7 +1,8 @@
 "use client";
 
 import { Search, Filter, X } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { dummyDAOs } from '@/lib/daoData';
 
 type FilterOption = {
   id: string;
@@ -9,19 +10,41 @@ type FilterOption = {
   count?: number;
 };
 
-const categoryOptions: FilterOption[] = [
-  { id: 'all', label: 'All DAOs', count: 124 },
-  { id: 'defi', label: 'DeFi', count: 42 },
-  { id: 'nft', label: 'NFT', count: 36 },
-  { id: 'gaming', label: 'Gaming', count: 28 },
-  { id: 'social', label: 'Social', count: 18 },
-];
+const getCategoryOptions = (): FilterOption[] => {
+  const categoryCounts = dummyDAOs.reduce((acc, dao) => {
+    acc[dao.category] = (acc[dao.category] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
-const statusOptions = [
-  { id: 'active', label: 'Active', color: 'bg-green-500' },
-  { id: 'new', label: 'New', color: 'bg-blue-500' },
-  { id: 'trending', label: 'Trending', color: 'bg-purple-500' },
-];
+  return [
+    { id: 'all', label: 'All DAOs', count: dummyDAOs.length },
+    ...Object.entries(categoryCounts).map(([category, count]) => ({
+      id: category,
+      label: category.charAt(0).toUpperCase() + category.slice(1),
+      count,
+    })),
+  ];
+};
+
+const getStatusOptions = () => {
+  const statusCounts = dummyDAOs.reduce((acc, dao) => {
+    acc[dao.status] = (acc[dao.status] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const statusColors: Record<string, string> = {
+    active: 'bg-green-500',
+    new: 'bg-blue-500',
+    trending: 'bg-purple-500',
+  };
+
+  return Object.entries(statusCounts).map(([status, count]) => ({
+    id: status,
+    label: status.charAt(0).toUpperCase() + status.slice(1),
+    color: statusColors[status] || 'bg-gray-500',
+    count,
+  }));
+};
 
 interface SearchFilterProps {
   searchQuery: string;
@@ -45,6 +68,9 @@ export default function SearchFilter({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery);
 
+  const categoryOptions = useMemo(() => getCategoryOptions(), []);
+  const statusOptions = useMemo(() => getStatusOptions(), []);
+
   // Debounce search input
   useEffect(() => {
     if (typeof onSearchChange !== 'function') return;
@@ -57,9 +83,10 @@ export default function SearchFilter({
   }, [localSearchQuery, onSearchChange]);
 
   const toggleStatus = (statusId: string) => {
-    const newStatuses = selectedStatus.includes(statusId)
-      ? selectedStatus.filter(id => id !== statusId)
-      : [...selectedStatus, statusId];
+    const currentStatuses = selectedStatus || [];
+    const newStatuses = currentStatuses.includes(statusId)
+      ? currentStatuses.filter(id => id !== statusId)
+      : [...currentStatuses, statusId];
     onStatusChange(newStatuses);
   };
 
@@ -67,7 +94,7 @@ export default function SearchFilter({
     onCategoryChange(categoryId);
   };
 
-  const hasActiveFilters = localSearchQuery || selectedCategory !== 'all' || selectedStatus.length > 0;
+  const hasActiveFilters = localSearchQuery || selectedCategory !== 'all' || (selectedStatus || []).length > 0;
 
   return (
     <div className="mb-12">
@@ -156,7 +183,7 @@ export default function SearchFilter({
                     type="button"
                     onClick={() => toggleStatus(status.id)}
                     className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium border ${
-                      selectedStatus.includes(status.id)
+                      (selectedStatus || []).includes(status.id)
                         ? `${status.color.replace('bg-', 'bg-')} text-white border-transparent`
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     }`}
@@ -196,7 +223,7 @@ export default function SearchFilter({
                     </button>
                   </span>
                 )}
-                {selectedStatus.map((statusId) => {
+                {(selectedStatus || []).map((statusId) => {
                   const status = statusOptions.find(s => s.id === statusId);
                   return status ? (
                     <span 
