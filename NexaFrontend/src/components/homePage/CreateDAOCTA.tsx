@@ -89,7 +89,7 @@ export default function CreateDAOCTA() {
                   </Tooltip>
                   {/* </div> */}
                   <Button
-                    onClick={() => route.push('/about')}
+                    onClick={() => route.push('/about/#features')}
                     variant='outline'
                     size='lg'
                     className="flex items-center gap-2 h-12 bg-transparent hover:bg-transparent hover:text-white font-semibold cursor-pointer transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
