@@ -17,6 +17,7 @@ const Header = () => {
   const commonLinks = [
     { name: "Home", path: "/" },
     { name: "About", path: "/about" },
+    { name: "Discover", path: "/home" },
   ];
 
   // Links that are only visible when connected

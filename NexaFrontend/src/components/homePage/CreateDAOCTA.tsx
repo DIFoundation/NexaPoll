@@ -1,63 +1,135 @@
 "use client";
 
-import { Plus, Zap, Users } from 'lucide-react';
+import { Plus, Zap, Users, Shield, BarChart2, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 
 export default function CreateDAOCTA() {
   return (
-    <div className="mb-12">
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white relative overflow-hidden">
-        {/* Background decoration */}
-        <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white/10 rounded-full"></div>
-        <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-40 h-40 bg-white/5 rounded-full"></div>
-        
-        <div className="relative z-10">
-          <div className="grid md:grid-cols-2 gap-8 items-center">
-            <div>
-              <div className="flex items-center mb-4">
-                <Zap className="w-8 h-8 mr-3" />
-                <h2 className="text-2xl font-bold">Create Your DAO</h2>
-              </div>
-              <p className="text-blue-100 text-lg mb-6 leading-relaxed">
-                Launch your decentralized autonomous organization in minutes. 
-                Set up governance, manage treasury, and empower your community 
-                to make collective decisions.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link 
-                  href="/create-dao"
-                  className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-blue-600 font-semibold hover:bg-gray-50 transition-colors duration-200 shadow-lg"
-                >
-                  <Plus className="w-5 h-5 mr-2" />
-                  Create DAO
-                </Link>
-                <Link 
-                  href="/about"
-                  className="inline-flex items-center px-6 py-3 rounded-lg border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-colors duration-200"
-                >
-                  Learn More
-                </Link>
-              </div>
-            </div>
-            
-            <div className="hidden md:block">
-              <div className="bg-white/10 backdrop-blur rounded-xl p-6">
-                <h3 className="font-semibold mb-4 text-white">Why Create a DAO?</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center text-blue-100">
-                    <Users className="w-4 h-4 mr-3 text-blue-300" />
-                    <span className="text-sm">Democratic governance</span>
+    <div className="py-16 bg-gradient-to-b from-gray-50 to-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-8 text-white relative overflow-hidden shadow-xl">
+          {/* Animated background elements */}
+          <motion.div 
+            className="absolute top-0 right-0 -mt-12 -mr-12 w-48 h-48 bg-white/10 rounded-full"
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.1, 0.2, 0.1],
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+          />
+          <motion.div 
+            className="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-white/5 rounded-full"
+            animate={{
+              scale: [1, 1.2, 1],
+              opacity: [0.05, 0.1, 0.05],
+            }}
+            transition={{
+              duration: 10,
+              repeat: Infinity,
+              repeatType: "reverse",
+            }}
+          />
+          
+          <div className="relative z-10">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5 }}
+                viewport={{ once: true }}
+              >
+                <div className="flex items-center mb-4">
+                  <div className="p-2 bg-white/20 rounded-lg mr-3">
+                    <Zap className="w-6 h-6 text-yellow-300" />
                   </div>
-                  <div className="flex items-center text-blue-100">
-                    <Users className="w-4 h-4 mr-3 text-blue-300" />
-                    <span className="text-sm">Transparent treasury management</span>
+                  <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 to-white">
+                    Ready to Launch Your DAO?
+                  </h2>
+                </div>
+                <p className="text-blue-100 text-lg mb-8 leading-relaxed">
+                  Create a fully functional decentralized autonomous organization in minutes. 
+                  Equip your community with powerful governance tools, transparent voting, 
+                  and secure treasury management—all on the blockchain.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link 
+                    href="/create-dao"
+                    className="inline-flex items-center justify-center px-8 py-3.5 rounded-xl bg-white text-blue-600 font-semibold hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Create Your DAO Now
+                  </Link>
+                  <Link 
+                    href="/about"
+                    className="inline-flex items-center justify-center px-6 py-3 rounded-xl border-2 border-white/30 text-white font-medium hover:bg-white/10 transition-colors duration-200"
+                  >
+                    How It Works
+                  </Link>
+                </div>
+                
+                <div className="mt-8 flex flex-wrap items-center gap-4 text-sm text-blue-100">
+                  <div className="flex items-center">
+                    <Shield className="w-4 h-4 mr-2 text-green-300" />
+                    <span>Audited Smart Contracts</span>
                   </div>
-                  <div className="flex items-center text-blue-100">
-                    <Users className="w-4 h-4 mr-3 text-blue-300" />
-                    <span className="text-sm">Community-driven decisions</span>
+                  <div className="hidden sm:block w-px h-4 bg-white/30"></div>
+                  <div className="flex items-center">
+                    <BarChart2 className="w-4 h-4 mr-2 text-purple-300" />
+                    <span>Advanced Analytics</span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
+              
+              <motion.div 
+                className="hidden md:block"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                viewport={{ once: true }}
+              >
+                <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 border border-white/20 shadow-lg">
+                  <h3 className="font-bold text-xl mb-6 flex items-center">
+                    <Lock className="w-5 h-5 mr-2 text-yellow-300" />
+                    Why Choose NexaPoll?
+                  </h3>
+                  <div className="space-y-4">
+                    {[
+                      {
+                        icon: <Shield className="w-5 h-5 text-green-300" />,
+                        title: "Enterprise-Grade Security",
+                        description: "Built on battle-tested smart contract standards with multiple security audits."
+                      },
+                      {
+                        icon: <Users className="w-5 h-5 text-blue-300" />,
+                        title: "Community Focused",
+                        description: "Designed to empower communities with transparent decision-making tools."
+                      },
+                      {
+                        icon: <Zap className="w-5 h-5 text-yellow-300" />,
+                        title: "Lightning Fast",
+                        description: "Low-latency voting and proposal management with instant finality."
+                      }
+                    ].map((item, index) => (
+                      <div key={index} className="flex items-start">
+                        <div className="flex-shrink-0 mt-1">
+                          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/10">
+                            {item.icon}
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <h4 className="font-semibold text-white">{item.title}</h4>
+                          <p className="text-blue-100 text-sm mt-1">{item.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>
