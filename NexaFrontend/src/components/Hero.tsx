@@ -1,8 +1,15 @@
 "use client";
 
-import { ArrowRight, Vote, Users, Coins, Shield } from 'lucide-react';
+import { ArrowRight, Shield } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function Hero() {
+  const router = useRouter();
+  
+  const goHome = () => {
+    router.push('/home');
+  };
+
   return (
     <section className="relative overflow-hidden bg-white pt-16 pb-24">
       {/* Background decoration */}
@@ -31,7 +38,7 @@ export default function Hero() {
 
           {/* CTA Buttons */}
           <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button className="inline-flex items-center rounded-lg bg-blue-600 px-8 py-4 text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors duration-200">
+            <button onClick={goHome} className="inline-flex items-center rounded-lg bg-blue-600 px-8 py-4 text-lg font-semibold text-white shadow-lg hover:bg-blue-700 transition-colors duration-200">
               Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
             </button>
