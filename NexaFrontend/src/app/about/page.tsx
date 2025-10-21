@@ -1,10 +1,10 @@
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import AboutHero from '../../components/AboutHero';
-import Mission from '../../components/Mission';
-import DetailedFeatures from '../../components/DetailedFeatures';
-import Stats from '../../components/Stats';
-import Team from '../../components/Team';
+import AboutHero from '../../components/aboutPage/AboutHero';
+import Mission from '../../components/aboutPage/Mission';
+import DetailedFeatures from '../../components/aboutPage/DetailedFeatures';
+import Stats from '../../components/aboutPage/Stats';
+import Team from '../../components/aboutPage/Team';
 
 export default function About() {
   return (
