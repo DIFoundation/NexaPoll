@@ -1,6 +1,5 @@
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import SearchFilter from '../../components/homePage/SearchFilter';
 import CreateDAOCTA from '../../components/homePage/CreateDAOCTA';
 import DAOGrid from '../../components/homePage/DAOGrid';
 
@@ -22,9 +21,6 @@ export default function Home() {
 
           {/* Create DAO CTA */}
           <CreateDAOCTA />
-
-          {/* Search and Filter */}
-          <SearchFilter />
 
           {/* DAO Grid */}
           <DAOGrid />
