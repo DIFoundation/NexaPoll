@@ -1,5 +1,6 @@
 "use client";
 
+import Image from 'next/image';
 import { ExternalLink } from 'lucide-react';
 import { siGithub, siX, siDiscord, siTelegram } from 'simple-icons/icons';
 
@@ -71,7 +72,13 @@ export default function Footer() {
             {/* Brand section */}
             <div className="col-span-2">
               <div className="flex items-center mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg mr-3"></div>
+                <Image
+                  src="/NexaPoll.png"
+                  alt="Logo"
+                  width={32}
+                  height={32}
+                  className="mr-3"
+                />
                 <span className="text-xl font-bold text-white">NexaPoll</span>
               </div>
               <p className="text-gray-400 text-sm mb-6 max-w-md">
