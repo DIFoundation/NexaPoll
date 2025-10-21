@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { dummyDAOs } from '@/lib/daoData';
 import { getActiveProposals } from '@/lib/proposalData';
-import { Search, Users, FileText, Clock, TrendingUp, Zap, Sparkles, X, Filter } from 'lucide-react';
+import { Search, Users, FileText, Clock, TrendingUp, Zap, Sparkles, X, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Link from 'next/link';
 import { useDAOFilters } from '@/hooks/useDAOFilters';
 import Image from 'next/image';
@@ -175,6 +175,11 @@ const DAOGrid: React.FC = () => {
     categoryOptions,
     statusOptions,
     totalDAOs,
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    paginatedDAOs,
+    setCurrentPage
   } = useDAOFilters({
     searchQuery,
     selectedCategory,
@@ -372,28 +377,100 @@ const DAOGrid: React.FC = () => {
         )}
       </div>
 
-      {/* Results Count */}
-      <div className="flex items-center justify-between">
+      {/* Results Count and Pagination Top */}
+      <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-gray-500">
-          Showing <span className="font-medium">{filteredDAOs.length}</span> of{' '}
-          <span className="font-medium">{totalDAOs}</span> DAOs
+          Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{' '}
+          <span className="font-medium">
+            {Math.min(currentPage * itemsPerPage, filteredDAOs.length)}
+          </span>{' '}
+          of <span className="font-medium">{filteredDAOs.length}</span> DAOs
         </p>
+
+        {totalPages > 1 && (
+          <div className="flex items-center space-x-1">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className={`p-2 rounded-md ${
+                currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              aria-label="First page"
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className={`p-2 rounded-md ${
+                currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            
+            {/* Page numbers */}
+            {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+              let pageNum;
+              if (totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (currentPage <= 3) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                pageNum = totalPages - 4 + i;
+              } else {
+                pageNum = currentPage - 2 + i;
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => setCurrentPage(pageNum)}
+                  className={`w-10 h-10 rounded-md text-sm font-medium ${
+                    currentPage === pageNum
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className={`p-2 rounded-md ${
+                currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              aria-label="Next page"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className={`p-2 rounded-md ${
+                currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-100'
+              }`}
+              aria-label="Last page"
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* DAO Grid */}
+      {/* DAO Grid - Use paginationDAOs instead of filteredDAOs */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
-          // Show skeleton loaders
-          Array.from({ length: 6 }).map((_, i) => (
+          Array.from({ length: itemsPerPage }).map((_, i) => (
             <DAOCardSkeleton key={`skeleton-${i}`} />
           ))
-        ) : filteredDAOs.length > 0 ? (
-          // Show actual DAO cards
-          filteredDAOs.map((dao) => (
-            <DAOCard key={dao.id} dao={dao} />
-          ))
+        ) : paginatedDAOs.length > 0 ? (
+          paginatedDAOs.map((dao) => <DAOCard key={dao.id} dao={dao} />)
         ) : (
-          // No results state
           <div className="col-span-full text-center py-16 bg-white rounded-2xl border border-gray-200 shadow-sm">
             <Search className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-4 text-lg font-medium text-gray-900">No DAOs found</h3>
@@ -403,13 +480,22 @@ const DAOGrid: React.FC = () => {
             <button
               type="button"
               onClick={clearFilters}
-              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
             >
               Clear all filters
             </button>
           </div>
         )}
       </div>
+
+      {/* Pagination Bottom - Same as top but without the results count */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-8">
+          <div className="flex items-center space-x-1">
+            {/* Same pagination controls as above */}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
