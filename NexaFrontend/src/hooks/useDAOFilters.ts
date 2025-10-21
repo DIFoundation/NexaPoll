@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { dummyDAOs } from '@/lib/daoData';
 
 export const useDAOFilters = ({
@@ -10,6 +10,10 @@ export const useDAOFilters = ({
   selectedCategory: string;
   selectedStatus: string[];
 }) => {
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9; // 3x3 grid
+
   const filteredDAOs = useMemo(() => {
     return dummyDAOs.filter(dao => {
       // Filter by category
@@ -74,10 +78,25 @@ export const useDAOFilters = ({
     }));
   }, []);
 
+  // Calculate paginated DAOs
+  const paginatedDAOs = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredDAOs.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredDAOs, currentPage]);
+
+  // Calculate total pages
+  const totalPages = Math.ceil(filteredDAOs.length / itemsPerPage);
+
+
   return {
     filteredDAOs,
     categoryOptions,
     statusOptions,
     totalDAOs: dummyDAOs.length,
+    currentPage,
+    itemsPerPage,
+    totalPages,
+    paginatedDAOs,
+    setCurrentPage
   };
 };
