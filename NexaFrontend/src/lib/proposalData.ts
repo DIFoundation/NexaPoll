@@ -91,6 +91,21 @@ export const dummyProposals: Proposal[] = [
     createdAt: '2025-10-05T09:30:00Z',
     updatedAt: '2025-10-20T09:30:00Z',
   },
+  {
+    id: 'p7',
+    daoId: '7',
+    title: 'Security Standardization Initiative',
+    description: 'Proposal to establish security best practices across all alliance members.',
+    status: 'defeated',
+    startBlock: 15600000,
+    endBlock: 15621600,
+    forVotes: 4500000,
+    againstVotes: 5000000,
+    abstainVotes: 1000000,
+    proposer: '0x7890abcdef1234567890abcdef1234567890abcd',
+    createdAt: '2025-10-05T09:30:00Z',
+    updatedAt: '2025-10-20T09:30:00Z',
+  },
 ];
 
 export const getProposalsByDAO = (daoId: string): Proposal[] => {

@@ -103,6 +103,23 @@ export const dummyDAOs: DAO[] = [
     createdAt: '2024-02-10T13:20:00Z',
     updatedAt: '2025-10-20T09:30:00Z',
   },
+  {
+    id: '7',
+    name: 'MetaLands',
+    description: 'Play-to-earn metaverse where players own and monetize virtual real estate.',
+    logo: '/logos/metalands.png',
+    category: 'gaming',
+    members: 23456,
+    proposals: 127,
+    activeProposals: 5,
+    status: 'trending',
+    tags: ['gaming', 'metaverse', 'virtual-world'],
+    website: 'https://metalands.game',
+    twitter: 'metalands',
+    discord: 'metalands',
+    createdAt: '2023-08-22T14:20:00Z',
+    updatedAt: '2025-10-21T08:10:00Z',
+  },
 ];
 
 export const getDAOById = (id: string): DAO | undefined => {
@@ -133,21 +150,24 @@ export const filterDAOs = (filters: {
 }): DAO[] => {
   let result = [...dummyDAOs];
 
+  // Apply category filter
   if (filters.category && filters.category !== 'all') {
     result = result.filter(dao => dao.category === filters.category);
   }
 
+  // Apply status filter
   if (filters.status && filters.status.length > 0) {
     result = result.filter(dao => filters.status?.includes(dao.status));
   }
 
-  if (filters.searchQuery) {
-    const query = filters.searchQuery.toLowerCase();
+  // Apply search query filter
+  if (filters.searchQuery && filters.searchQuery.trim() !== '') {
+    const query = filters.searchQuery.toLowerCase().trim();
     result = result.filter(
       dao =>
         dao.name.toLowerCase().includes(query) ||
         dao.description.toLowerCase().includes(query) ||
-        dao.tags.some(tag => tag.toLowerCase().includes(query))
+        (dao.tags && dao.tags.some(tag => tag.toLowerCase().includes(query)))
     );
   }
 

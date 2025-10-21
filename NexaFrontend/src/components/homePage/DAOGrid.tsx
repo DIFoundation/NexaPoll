@@ -169,7 +169,7 @@ const DAOGrid: React.FC<DAOGridProps> = ({
     return filterDAOs({
       category: selectedCategory,
       status: selectedStatus,
-      searchQuery,
+      searchQuery: searchQuery.trim(),
     });
   }, [searchQuery, selectedCategory, selectedStatus]);
 
@@ -182,7 +182,7 @@ const DAOGrid: React.FC<DAOGridProps> = ({
         setFilteredDAOs(memoizedFilteredDAOs);
         setIsLoading(false);
       }
-    }, 100); // Reduced delay for better UX
+    }, 100);
 
     return () => {
       isMounted = false;
@@ -197,7 +197,7 @@ const DAOGrid: React.FC<DAOGridProps> = ({
         <Search className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-4 text-lg font-medium text-gray-900">No DAOs found</h3>
         <p className="mt-2 text-gray-500">
-          Try adjusting your search or filter criteria to find what you're looking for.
+          Try adjusting your search or filter criteria to find what you&apos;re looking for.
         </p>
       </div>
     );
