@@ -1,16 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { dummyDAOs, filterDAOs } from '@/lib/daoData';
+import { dummyDAOs } from '@/lib/daoData';
 import { getActiveProposals } from '@/lib/proposalData';
-import { Search, ArrowUpRight, Users, FileText, Clock, TrendingUp, Zap, Sparkles } from 'lucide-react';
+import { Search, ArrowUpRight, Users, FileText, Clock, TrendingUp, Zap, Sparkles, X, Filter } from 'lucide-react';
 import Link from 'next/link';
-
-interface DAOGridProps {
-  searchQuery?: string;
-  selectedCategory?: string;
-  selectedStatus?: string[];
-}
+import { useDAOFilters } from '@/hooks/useDAOFilters';
 
 // Memoize the DAO card component to prevent unnecessary re-renders
 const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
@@ -48,89 +43,79 @@ const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
       nft: 'bg-purple-100 text-purple-800',
       gaming: 'bg-green-100 text-green-800',
       social: 'bg-pink-100 text-pink-800',
-      governance: 'bg-yellow-100 text-yellow-800',
+      governance: 'bg-indigo-100 text-indigo-800',
       other: 'bg-gray-100 text-gray-800',
     };
     return colors[category] || colors.other;
   }, []);
 
-  const formatNumber = useCallback((num: number): string => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
-  }, []);
-
   return (
-    <div className="group bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
-      <div className="relative h-48 bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div className="absolute -bottom-6 left-6 w-16 h-16 rounded-xl bg-white border-4 border-white shadow-sm overflow-hidden">
-          <div className="w-full h-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-2xl font-bold text-blue-600">
-            {dao.name.charAt(0)}
-          </div>
-        </div>
-        
-        <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-xs font-medium inline-flex items-center ${statusBadge.bg} ${statusBadge.border} border`}>
-          {statusBadge.icon}
-          {statusBadge.label}
-        </div>
-      </div>
-      
-      <div className="pt-8 px-6 pb-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-              {dao.name}
-            </h3>
-            <p className="mt-1 text-sm text-gray-500 line-clamp-2">
-              {dao.description}
-            </p>
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="p-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex-shrink-0">
+              <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                {/* Replace with actual logo */}
+                <span className="text-gray-500 text-xl font-medium">
+                  {dao.name.charAt(0)}
+                </span>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="text-lg font-semibold text-gray-900">{dao.name}</h3>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.border}`}>
+                  {statusBadge.icon}
+                  {statusBadge.label}
+                </span>
+              </div>
+              <p className="mt-1 text-sm text-gray-500 line-clamp-2">{dao.description}</p>
+            </div>
           </div>
           <Link 
-            href={`/dao/${dao.id}`}
+            href={`/daos/${dao.id}`}
             className="text-blue-600 hover:text-blue-800 transition-colors"
             aria-label={`View ${dao.name} details`}
           >
-            <ArrowUpRight className="w-5 h-5" />
+            <ArrowUpRight className="h-5 w-5" />
           </Link>
         </div>
-        
+
         <div className="mt-4 flex flex-wrap gap-2">
-          <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${getCategoryColor(dao.category)}`}>
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(dao.category)}`}>
             {dao.category.charAt(0).toUpperCase() + dao.category.slice(1)}
           </span>
-          {dao.tags.slice(0, 2).map((tag) => (
-            <span key={tag} className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-800">
+          {dao.tags?.slice(0, 3).map((tag) => (
+            <span key={tag} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
               {tag}
             </span>
           ))}
-          {dao.tags.length > 2 && (
-            <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500">
-              +{dao.tags.length - 2}
-            </span>
-          )}
         </div>
-        
-        <div className="mt-6 pt-6 border-t border-gray-100 grid grid-cols-3 gap-4 text-center">
-          <div>
-            <div className="text-sm text-gray-500 flex items-center justify-center">
-              <Users className="w-4 h-4 mr-1" />
-              Members
+
+        <div className="mt-6 pt-6 border-t border-gray-100">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center">
+              <dt className="text-sm font-medium text-gray-500">Members</dt>
+              <dd className="mt-1 text-sm font-medium text-gray-900 flex items-center justify-center">
+                <Users className="h-4 w-4 mr-1 text-gray-400" />
+                {(dao.members / 1000).toFixed(1)}K
+              </dd>
             </div>
-            <div className="mt-1 font-semibold">{formatNumber(dao.members)}</div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-500 flex items-center justify-center">
-              <FileText className="w-4 h-4 mr-1" />
-              Proposals
+            <div className="text-center">
+              <dt className="text-sm font-medium text-gray-500">Proposals</dt>
+              <dd className="mt-1 text-sm font-medium text-gray-900 flex items-center justify-center">
+                <FileText className="h-4 w-4 mr-1 text-gray-400" />
+                {dao.proposals}
+              </dd>
             </div>
-            <div className="mt-1 font-semibold">{formatNumber(dao.proposals)}</div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-500 flex items-center justify-center">
-              <Clock className="w-4 h-4 mr-1" />
-              Active
+            <div className="text-center">
+              <dt className="text-sm font-medium text-gray-500">Active</dt>
+              <dd className="mt-1 text-sm font-medium text-gray-900 flex items-center justify-center">
+                <Clock className="h-4 w-4 mr-1 text-gray-400" />
+                {activeProposals.length}
+              </dd>
             </div>
-            <div className="mt-1 font-semibold">{activeProposals.length}</div>
           </div>
         </div>
       </div>
@@ -142,80 +127,286 @@ DAOCard.displayName = 'DAOCard';
 
 // Loading skeleton component
 const DAOCardSkeleton = () => (
-  <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-pulse">
-    <div className="h-48 bg-gray-200"></div>
+  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm animate-pulse">
     <div className="p-6">
-      <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
-      <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
-      <div className="h-4 bg-gray-200 rounded w-5/6 mb-4"></div>
-      <div className="flex justify-between">
-        <div className="h-8 bg-gray-200 rounded w-20"></div>
-        <div className="h-8 bg-gray-200 rounded w-24"></div>
+      <div className="flex items-start justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="h-12 w-12 rounded-full bg-gray-200"></div>
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-32"></div>
+            <div className="h-3 bg-gray-200 rounded w-48"></div>
+          </div>
+        </div>
+        <div className="h-5 w-5 bg-gray-200 rounded"></div>
+      </div>
+      <div className="mt-4 flex space-x-2">
+        <div className="h-6 bg-gray-200 rounded-full w-16"></div>
+        <div className="h-6 bg-gray-200 rounded-full w-20"></div>
+      </div>
+      <div className="mt-6 pt-6 border-t border-gray-100">
+        <div className="grid grid-cols-3 gap-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-3 bg-gray-200 rounded w-12 mx-auto"></div>
+              <div className="h-4 bg-gray-200 rounded w-8 mx-auto"></div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   </div>
 );
 
-const DAOGrid: React.FC<DAOGridProps> = ({
-  searchQuery = '',
-  selectedCategory = 'all',
-  selectedStatus = [],
-}) => {
+const DAOGrid: React.FC = () => {
+  // State for filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [filteredDAOs, setFilteredDAOs] = useState<typeof dummyDAOs>([]);
 
-  // Memoize filtered DAOs to prevent unnecessary recalculations
-  const memoizedFilteredDAOs = useMemo(() => {
-    return filterDAOs({
-      category: selectedCategory,
-      status: selectedStatus,
-      searchQuery: searchQuery.trim(),
-    });
+  const {
+    filteredDAOs,
+    categoryOptions,
+    statusOptions,
+    totalDAOs,
+  } = useDAOFilters({
+    searchQuery,
+    selectedCategory,
+    selectedStatus,
+  });
+
+  // Handle search input change with debounce
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Toggle status filter
+  const toggleStatus = (statusId: string) => {
+    setSelectedStatus(prev =>
+      prev.includes(statusId)
+        ? prev.filter(id => id !== statusId)
+        : [...prev, statusId]
+    );
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('all');
+    setSelectedStatus([]);
+  };
+
+  // Simulate loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [searchQuery, selectedCategory, selectedStatus]);
 
-  // Use a single effect to handle loading state and data updates
-  useEffect(() => {
-    let isMounted = true;
-    
-    const timer = setTimeout(() => {
-      if (isMounted) {
-        setFilteredDAOs(memoizedFilteredDAOs);
-        setIsLoading(false);
-      }
-    }, 100);
-
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [memoizedFilteredDAOs]);
-
-  // No results state
-  if (!isLoading && filteredDAOs.length === 0) {
-    return (
-      <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 shadow-sm">
-        <Search className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-4 text-lg font-medium text-gray-900">No DAOs found</h3>
-        <p className="mt-2 text-gray-500">
-          Try adjusting your search or filter criteria to find what you&apos;re looking for.
-        </p>
-      </div>
-    );
-  }
+  // Calculate active filter count
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedCategory !== 'all') count++;
+    if (selectedStatus.length > 0) count += selectedStatus.length;
+    if (searchQuery.trim() !== '') count++;
+    return count;
+  }, [selectedCategory, selectedStatus, searchQuery]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {isLoading ? (
-        // Show skeleton loaders
-        Array.from({ length: 6 }).map((_, i) => (
-          <DAOCardSkeleton key={`skeleton-${i}`} />
-        ))
-      ) : (
-        // Show actual DAO cards
-        filteredDAOs.map((dao) => (
-          <DAOCard key={dao.id} dao={dao} />
-        ))
-      )}
+    <div className="space-y-6">
+      {/* Search and Filter Bar */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Search Input */}
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search DAOs..."
+              value={searchQuery}
+              onChange={handleSearchChange}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+            />
+          </div>
+
+          {/* Filter Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsFilterOpen(!isFilterOpen)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            <Filter className="h-4 w-4 mr-2 text-gray-500" />
+            Filters
+            {activeFilterCount > 0 && (
+              <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-xs font-medium text-blue-800">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Filter Panel */}
+        {isFilterOpen && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Category Filter */}
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Category</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {categoryOptions.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(option.id)}
+                      className={`flex items-center justify-between px-3 py-2 text-sm rounded-lg border ${
+                        selectedCategory === option.id
+                          ? 'bg-blue-50 border-blue-500 text-blue-700'
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span>{option.label}</span>
+                      <span className="ml-2 text-xs font-medium text-gray-500">
+                        {option.count}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-gray-700 mb-2">Status</h3>
+                <div className="flex flex-wrap gap-2">
+                  {statusOptions.map((status) => (
+                    <button
+                      key={status.id}
+                      type="button"
+                      onClick={() => toggleStatus(status.id)}
+                      className={`inline-flex items-center px-3 py-2 text-sm rounded-full border ${
+                        selectedStatus.includes(status.id)
+                          ? `${status.color.replace('bg-', 'bg-opacity-20 border-')} ${status.color.replace('bg-', 'text-')}`
+                          : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full ${status.color} mr-2`}></span>
+                      {status.label}
+                      <span className="ml-1 text-xs text-gray-500">
+                        ({status.count})
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Active Filters */}
+            {(selectedCategory !== 'all' || selectedStatus.length > 0 || searchQuery) && (
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-gray-700">Active Filters</h3>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    Clear all
+                  </button>
+                </div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {selectedCategory !== 'all' && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {categoryOptions.find(c => c.id === selectedCategory)?.label}
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCategory('all')}
+                        className="ml-1.5 inline-flex items-center justify-center h-4 w-4 rounded-full bg-blue-200 text-blue-800 hover:bg-blue-300"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                  {selectedStatus.map((statusId) => {
+                    const status = statusOptions.find(s => s.id === statusId);
+                    if (!status) return null;
+                    return (
+                      <span 
+                        key={statusId}
+                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${status.color.replace('bg-', 'bg-opacity-20 ')} ${status.color.replace('bg-', 'text-')}`}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${status.color} mr-1`}></span>
+                        {status.label}
+                        <button
+                          type="button"
+                          onClick={() => toggleStatus(statusId)}
+                          className="ml-1.5 inline-flex items-center justify-center h-4 w-4 rounded-full bg-opacity-30 hover:bg-opacity-40"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                  {searchQuery && (
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                      Search: {searchQuery}
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="ml-1.5 inline-flex items-center justify-center h-4 w-4 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Results Count */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">
+          Showing <span className="font-medium">{filteredDAOs.length}</span> of{' '}
+          <span className="font-medium">{totalDAOs}</span> DAOs
+        </p>
+      </div>
+
+      {/* DAO Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {isLoading ? (
+          // Show skeleton loaders
+          Array.from({ length: 6 }).map((_, i) => (
+            <DAOCardSkeleton key={`skeleton-${i}`} />
+          ))
+        ) : filteredDAOs.length > 0 ? (
+          // Show actual DAO cards
+          filteredDAOs.map((dao) => (
+            <DAOCard key={dao.id} dao={dao} />
+          ))
+        ) : (
+          // No results state
+          <div className="col-span-full text-center py-16 bg-white rounded-2xl border border-gray-200 shadow-sm">
+            <Search className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-4 text-lg font-medium text-gray-900">No DAOs found</h3>
+            <p className="mt-2 text-gray-500">
+              Try adjusting your search or filter criteria to find what you&apos;re looking for.
+            </p>
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
