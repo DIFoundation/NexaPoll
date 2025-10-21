@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Icons } from "@/components/icons"
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronLeft, ChevronRight, MoreHorizontal, Search, UserPlus, Users } from "lucide-react"
 
 type Member = {
   id: string
@@ -171,11 +171,11 @@ export function MembersTab({ daoId }: MembersTabProps) {
   }
 
   const SortIcon = ({ column }: { column: 'votingPower' | 'joinedAt' | 'proposals' }) => {
-    if (sortBy.key !== column) return <Icons.arrowUpDown className="ml-2 h-3 w-3 text-muted-foreground" />
+    if (sortBy.key !== column) return <ArrowUpDown className="ml-2 h-3 w-3 text-muted-foreground" />
     
     return sortBy.order === 'asc' 
-      ? <Icons.arrowUp className="ml-2 h-3 w-3" />
-      : <Icons.arrowDown className="ml-2 h-3 w-3" />
+      ? <ArrowUp className="ml-2 h-3 w-3" />
+      : <ArrowDown className="ml-2 h-3 w-3" />
   }
 
   return (
@@ -183,7 +183,7 @@ export function MembersTab({ daoId }: MembersTabProps) {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex-1">
           <div className="relative">
-            <Icons.search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Search members..."
@@ -217,7 +217,7 @@ export function MembersTab({ daoId }: MembersTabProps) {
           </div>
           
           <Button variant="outline">
-            <Icons.userPlus className="mr-2 h-4 w-4" />
+            <UserPlus className="mr-2 h-4 w-4" />
             Add Member
           </Button>
         </div>
@@ -306,7 +306,7 @@ export function MembersTab({ daoId }: MembersTabProps) {
                   </TableCell>
                   <TableCell>
                     <Button variant="ghost" size="icon">
-                      <Icons.moreHorizontal className="h-4 w-4" />
+                      <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -315,12 +315,12 @@ export function MembersTab({ daoId }: MembersTabProps) {
               <TableRow>
                 <TableCell colSpan={7} className="h-24 text-center">
                   <div className="flex flex-col items-center justify-center space-y-2 py-8">
-                    <Icons.users className="h-10 w-10 text-muted-foreground" />
+                    <Users className="h-10 w-10 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground">
                       No members found
                     </p>
                     <Button variant="outline" size="sm" className="mt-2">
-                      <Icons.userPlus className="mr-2 h-4 w-4" />
+                      <UserPlus className="mr-2 h-4 w-4" />
                       Invite Members
                     </Button>
                   </div>
@@ -335,10 +335,10 @@ export function MembersTab({ daoId }: MembersTabProps) {
         <div>Showing {sortedMembers.length} of {members.length} members</div>
         <div className="flex items-center space-x-2">
           <Button variant="outline" size="sm" disabled>
-            <Icons.chevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm">
-            <Icons.chevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
       </div>

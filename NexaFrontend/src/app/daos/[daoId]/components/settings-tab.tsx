@@ -8,9 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Icons } from "@/components/icons"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { ArrowUp, ExternalLink, LoaderCircle, Trash2, Upload, UserPlus } from "lucide-react"
+import { siGithub, siX, siDiscord } from 'simple-icons'
 
 type SettingSectionProps = {
   title: string
@@ -58,6 +59,35 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
     isPausable: true,
     isUpgradable: true
   })
+
+  interface IconProps {
+    path: string;
+    title?: string;
+  }
+
+  interface SimpleIconProps {
+    icon: IconProps;
+    size?: number | string;
+    className?: string;
+  }
+
+  const SimpleIcon: React.FC<SimpleIconProps> = ({ 
+    icon, 
+    size = 24, 
+  }) => {
+    return (
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        width={size}
+        height={size}
+        fill="currentColor"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d={icon.path} />
+      </svg>
+    );
+  };
 
   // TODO: Fetch DAO settings from contract or API
   const daoAdmins = [
@@ -142,7 +172,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
           <CardHeader>
             <CardTitle>DAO Information</CardTitle>
             <CardDescription>
-              Update your DAO's basic information and social links
+              Update your DAO&apos;s basic information and social links
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -159,7 +189,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
                   </Avatar>
                 </div>
                 <Button variant="outline" size="sm" className="mt-6">
-                  <Icons.upload className="mr-2 h-4 w-4" />
+                  <Upload className="mr-2 h-4 w-4" />
                   Change Logo
                 </Button>
               </div>
@@ -208,7 +238,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
             >
               <div className="space-y-4">
                 <div className="flex items-center space-x-2">
-                  <Icons.twitter className="h-5 w-5 text-blue-400" />
+                  <SimpleIcon icon={siX} className="w-5 h-5 text-blue-400" />
                   <div className="flex-1">
                     <Input
                       name="socials.twitter"
@@ -220,7 +250,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Icons.discord className="h-5 w-5 text-indigo-500" />
+                  <SimpleIcon icon={siDiscord} className="w-5 h-5 text-indigo-500" />
                   <div className="flex-1">
                     <Input
                       name="socials.discord"
@@ -232,7 +262,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Icons.gitHub className="h-5 w-5" />
+                  <SimpleIcon icon={siGithub} className="w-5 h-5" />
                   <div className="flex-1">
                     <Input
                       name="socials.github"
@@ -248,7 +278,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
             <Button onClick={handleSaveChanges} disabled={isLoading}>
-              {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
               Save Changes
             </Button>
           </CardFooter>
@@ -376,7 +406,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
           </CardContent>
           <CardFooter className="border-t px-6 py-4">
             <Button onClick={handleSaveChanges} disabled={isLoading}>
-              {isLoading && <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
               Update Governance Settings
             </Button>
           </CardFooter>
@@ -511,7 +541,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
                       </p>
                     </div>
                     <Button variant="outline" size="sm">
-                      <Icons.externalLink className="mr-2 h-4 w-4" />
+                      <ExternalLink className="mr-2 h-4 w-4" />
                       View on Etherscan
                     </Button>
                   </div>
@@ -538,7 +568,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
                       </p>
                     </div>
                     <Button onClick={handleUpgradeContract} variant="default">
-                      <Icons.arrowUp className="mr-2 h-4 w-4" />
+                      <ArrowUp className="mr-2 h-4 w-4" />
                       Upgrade Now
                     </Button>
                   </div>
@@ -568,7 +598,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
                       onClick={handleTransferOwnership}
                       className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
                     >
-                      <Icons.userPlus className="mr-2 h-4 w-4" />
+                      <UserPlus className="mr-2 h-4 w-4" />
                       Transfer
                     </Button>
                   </div>
@@ -587,7 +617,7 @@ export function SettingsTab({ daoId }: SettingsTabProps) {
                       size="sm"
                       onClick={handleDeleteDAO}
                     >
-                      <Icons.trash2 className="mr-2 h-4 w-4" />
+                      <Trash2 className="mr-2 h-4 w-4" />
                       Delete DAO
                     </Button>
                   </div>
