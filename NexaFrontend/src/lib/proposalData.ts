@@ -1,4 +1,4 @@
-import { Proposal, ProposalStatus } from './types/dao';
+import { Proposal } from './types/dao';
 
 export const dummyProposals: Proposal[] = [
   {
