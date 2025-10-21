@@ -8,9 +8,6 @@ import {
   Clock,
   CheckCircle,
   Shield,
-  Zap,
-  Vote,
-  Wallet,
   Code,
   Globe
 } from 'lucide-react';
@@ -78,7 +75,7 @@ const stats = [
 
 export default function DetailedFeatures() {
   return (
-    <section className="py-24 bg-gray-50">
+    <section className="py-24 bg-gray-50" id='features'>
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-20">
