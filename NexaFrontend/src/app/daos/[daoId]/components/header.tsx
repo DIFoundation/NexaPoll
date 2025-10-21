@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Icons } from "@/components/icons"
+import { Check, Plus, Share2, Star } from "lucide-react"
 
 type HeaderProps = {
   daoId: string
@@ -24,7 +24,7 @@ export function Header({ daoId }: HeaderProps) {
                 <AvatarFallback>{daoName.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-1 border-2 border-background">
-                <Icons.check className="h-4 w-4 text-white" />
+                <Check className="h-4 w-4 text-white" />
               </div>
             </div>
             
@@ -36,11 +36,11 @@ export function Header({ daoId }: HeaderProps) {
           
           <div className="flex space-x-2 mt-4 md:mt-0">
             <Button variant="outline">
-              <Icons.link className="mr-2 h-4 w-4" />
+              <Share2 className="mr-2 h-4 w-4" />
               Share
             </Button>
             <Button>
-              <Icons.plus className="mr-2 h-4 w-4" />
+              <Plus className="mr-2 h-4 w-4" />
               Create Proposal
             </Button>
           </div>
@@ -64,11 +64,11 @@ export function Header({ daoId }: HeaderProps) {
           
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">
-              <Icons.share2 className="mr-2 h-4 w-4" />
+              <Share2 className="mr-2 h-4 w-4" />
               Share
             </Button>
             <Button variant="outline" size="sm">
-              <Icons.star className="mr-2 h-4 w-4" />
+              <Star className="mr-2 h-4 w-4" />
               Follow
             </Button>
           </div>

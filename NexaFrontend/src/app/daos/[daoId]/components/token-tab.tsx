@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Progress } from "@/components/ui/progress"
-import { Icons } from "@/components/icons"
+import { ArrowDown, ArrowRightLeft, ArrowUp, CheckCircle, Circle, CircleDollarSign, Coins, Copy, DollarSign, Download, ExternalLink, Filter, Gift, MinusCircle, Plus, PlusCircle, Send, Users, Wallet } from "lucide-react"
 
 type TokenHolder = {
   address: string
@@ -136,13 +136,13 @@ export function TokenTab({ daoId }: TokenTabProps) {
   const getTransactionTypeIcon = (type: string) => {
     switch (type) {
       case 'mint':
-        return <Icons.plusCircle className="h-4 w-4 text-green-500" />
+        return <PlusCircle className="h-4 w-4 text-green-500" />
       case 'burn':
-        return <Icons.minusCircle className="h-4 w-4 text-red-500" />
+        return <MinusCircle className="h-4 w-4 text-red-500" />
       case 'transfer':
-        return <Icons.arrowRightLeft className="h-4 w-4 text-blue-500" />
+        return <ArrowRightLeft className="h-4 w-4 text-blue-500" />
       default:
-        return <Icons.circle className="h-4 w-4" />
+        return <Circle className="h-4 w-4" />
     }
   }
 
@@ -152,7 +152,7 @@ export function TokenTab({ daoId }: TokenTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Supply</CardTitle>
-            <Icons.coins className="h-4 w-4 text-muted-foreground" />
+            <Coins className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatNumber(tokenData.totalSupply)} {tokenData.symbol}</div>
@@ -164,7 +164,7 @@ export function TokenTab({ daoId }: TokenTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Circulating Supply</CardTitle>
-            <Icons.circleDollarSign className="h-4 w-4 text-muted-foreground" />
+            <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatNumber(tokenData.circulatingSupply)} {tokenData.symbol}</div>
@@ -176,12 +176,12 @@ export function TokenTab({ daoId }: TokenTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Price</CardTitle>
-            <Icons.dollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(tokenData.price)}</div>
             <p className="text-xs text-muted-foreground flex items-center">
-              <Icons.arrowUp className="h-3 w-3 text-green-500 mr-1" />
+              <ArrowUp className="h-3 w-3 text-green-500 mr-1" />
               +2.5% (24h)
             </p>
           </CardContent>
@@ -189,7 +189,7 @@ export function TokenTab({ daoId }: TokenTabProps) {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Holders</CardTitle>
-            <Icons.users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatNumber(tokenData.holders)}</div>
@@ -258,7 +258,7 @@ export function TokenTab({ daoId }: TokenTabProps) {
                     <div className="flex items-center">
                       <span className="text-sm font-mono">0x7a25...9b3f</span>
                       <Button variant="ghost" size="icon" className="h-6 w-6 ml-1">
-                        <Icons.copy className="h-3.5 w-3.5" />
+                        <Copy className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
@@ -286,11 +286,11 @@ export function TokenTab({ daoId }: TokenTabProps) {
                 
                 <div className="mt-6 space-y-3">
                   <Button className="w-full">
-                    <Icons.wallet className="mr-2 h-4 w-4" />
+                    <Wallet className="mr-2 h-4 w-4" />
                     Add {tokenData.symbol} to Wallet
                   </Button>
                   <Button variant="outline" className="w-full">
-                    <Icons.externalLink className="mr-2 h-4 w-4" />
+                    <ExternalLink className="mr-2 h-4 w-4" />
                     View on Etherscan
                   </Button>
                 </div>
@@ -310,7 +310,7 @@ export function TokenTab({ daoId }: TokenTabProps) {
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm">
-                  <Icons.download className="mr-2 h-4 w-4" />
+                  <Download className="mr-2 h-4 w-4" />
                   Export
                 </Button>
               </div>
@@ -351,7 +351,7 @@ export function TokenTab({ daoId }: TokenTabProps) {
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm">
-                          <Icons.send className="h-4 w-4" />
+                          <Send className="h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -379,7 +379,7 @@ export function TokenTab({ daoId }: TokenTabProps) {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button variant="outline" size="sm">
-                    <Icons.filter className="mr-2 h-4 w-4" />
+                    <Filter className="mr-2 h-4 w-4" />
                     Filter
                   </Button>
                 </div>
@@ -472,11 +472,11 @@ export function TokenTab({ daoId }: TokenTabProps) {
                     </div>
                     <div className="mt-4 space-y-2">
                       <Button className="w-full">
-                        <Icons.plus className="mr-2 h-4 w-4" />
+                        <Plus className="mr-2 h-4 w-4" />
                         Stake {tokenData.symbol}
                       </Button>
                       <Button variant="outline" className="w-full">
-                        <Icons.arrowDown className="mr-2 h-4 w-4" />
+                        <ArrowDown className="mr-2 h-4 w-4" />
                         Unstake {tokenData.symbol}
                       </Button>
                     </div>
@@ -542,9 +542,9 @@ export function TokenTab({ daoId }: TokenTabProps) {
                               tx.type === 'stake' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'
                             }`}>
                               {tx.type === 'stake' ? (
-                                <Icons.arrowDown className="h-4 w-4" />
+                                <ArrowDown className="h-4 w-4" />
                               ) : (
-                                <Icons.gift className="h-4 w-4" />
+                                <Gift className="h-4 w-4" />
                               )}
                             </div>
                             <div>
@@ -581,15 +581,15 @@ export function TokenTab({ daoId }: TokenTabProps) {
                     </p>
                     <div className="space-y-2 text-sm">
                       <div className="flex items-start">
-                        <Icons.checkCircle className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
                         <span>Earn {tokenData.stakingApr}% APR in staking rewards</span>
                       </div>
                       <div className="flex items-start">
-                        <Icons.checkCircle className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
                         <span>Participate in governance proposals and voting</span>
                       </div>
                       <div className="flex items-start">
-                        <Icons.checkCircle className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                        <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
                         <span>Unstake at any time (7-day cooldown period applies)</span>
                       </div>
                     </div>
