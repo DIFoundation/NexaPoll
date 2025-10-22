@@ -19,7 +19,7 @@ export default function CTASection() {
             </h2>
             
             <p className="mx-auto max-w-3xl text-xl text-blue-100 mb-10 leading-8">
-              Take control of your community's future with transparent, decentralized governance. 
+              Take control of your community&apos;s future with transparent, decentralized governance. 
               Connect your wallet and launch your first DAO in minutes.
             </p>
 

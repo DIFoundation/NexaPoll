@@ -42,7 +42,7 @@ export default function AboutHero() {
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Innovation Focus</h3>
             <p className="text-blue-100">
-              Pushing the boundaries of what's possible in decentralized governance and DAO management.
+              Pushing the boundaries of what&apos;s possible in decentralized governance and DAO management.
             </p>
           </div>
         </div>

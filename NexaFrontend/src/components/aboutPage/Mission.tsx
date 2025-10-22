@@ -94,7 +94,7 @@ export default function Mission() {
           <Zap className="w-12 h-12 mx-auto mb-4" />
           <h3 className="text-2xl font-bold mb-4">Join the Revolution</h3>
           <p className="text-xl text-blue-100 mb-6 max-w-2xl mx-auto">
-            Be part of the movement that's reshaping how organizations operate and make decisions.
+            Be part of the movement that&apos;s reshaping how organizations operate and make decisions.
           </p>
           <button className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-blue-600 font-semibold hover:bg-gray-50 transition-colors">
             Start Your DAO Journey

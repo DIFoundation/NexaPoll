@@ -2,15 +2,9 @@
 
 import { 
   Zap, 
-  Users, 
   Wallet, 
   Vote, 
-  Settings, 
   Shield, 
-  Coins, 
-  FileText,
-  Clock,
-  CheckCircle
 } from 'lucide-react';
 
 const features = [

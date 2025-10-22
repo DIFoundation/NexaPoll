@@ -7,14 +7,18 @@ import { TokenTab } from "./components/token-tab"
 import { SettingsTab } from "./components/settings-tab"
 import { Header } from "./components/header"
 
+interface PageProps {
+  params: {
+    daoId: string
+  }
+}
+
 export default function DAODashboardPage({
   params,
-}: {
-  params: { daoId: string }
-}) {
+}: PageProps) {
   return (
     <div className="flex flex-col min-h-screen">
-      <Header daoId={params.daoId} />
+      <Header />
       
       <div className="container mx-auto px-4 py-8 flex-1">
         <Tabs defaultValue="overview" className="space-y-4">

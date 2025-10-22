@@ -1,9 +1,9 @@
 "use client";
 
 import { 
-  Wallet, 
+  // Wallet, 
   Settings, 
-  Users, 
+  // Users, 
   Vote, 
   Coins, 
   ArrowRight,

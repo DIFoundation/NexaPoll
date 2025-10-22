@@ -33,11 +33,7 @@ const SettingSection = ({ title, description, children, className = "" }: Settin
   </div>
 )
 
-type SettingsTabProps = {
-  daoId: string
-}
-
-export function SettingsTab({ daoId }: SettingsTabProps) {
+export function SettingsTab() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("general")
   const [isLoading, setIsLoading] = useState(false)

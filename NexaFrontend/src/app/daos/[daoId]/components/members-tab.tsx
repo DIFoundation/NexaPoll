@@ -19,11 +19,7 @@ type Member = {
   avatar?: string
 }
 
-type MembersTabProps = {
-  daoId: string
-}
-
-export function MembersTab({ daoId }: MembersTabProps) {
+export function MembersTab() {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState("all")
   const [sortBy, setSortBy] = useState<{ key: 'votingPower' | 'joinedAt' | 'proposals'; order: 'asc' | 'desc' }>({ 
