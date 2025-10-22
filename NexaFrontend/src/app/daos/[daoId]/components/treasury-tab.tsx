@@ -237,6 +237,8 @@ export function TreasuryTab({ daoId }: TreasuryTabProps) {
                             <Image 
                               src={asset.icon} 
                               alt={asset.name} 
+                              width={32}
+                              height={32}
                               className="h-6 w-6"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement

@@ -1,14 +1,14 @@
+'use client'
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Check, Plus, Share2, Star } from "lucide-react"
+import { useParams } from "next/navigation"
 
-type HeaderProps = {
-  daoId: string
-}
+export function Header() {
 
-export function Header({ daoId }: HeaderProps) {
-  // TODO: Fetch DAO details from contract or API
-  const daoName = "Example DAO"
+  const params = useParams()
+  const daoName = params.daoId
+  console.log("========", daoName, "==========")
   const daoDescription = "A decentralized organization focused on building the future of web3 governance."
   
   return (
@@ -21,7 +21,7 @@ export function Header({ daoId }: HeaderProps) {
             <div className="relative">
               <Avatar className="h-24 w-24 border-4 border-background">
                 <AvatarImage src="/placeholder-avatar.png" alt={daoName} />
-                <AvatarFallback>{daoName.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{daoName?.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-1 border-2 border-background">
                 <Check className="h-4 w-4 text-white" />
