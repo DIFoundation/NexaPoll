@@ -58,7 +58,7 @@ const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
             <div className="flex-shrink-0">
               <div className="h-12 w-12 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                 <Link
-                  href={`/daos/${dao.name}`}
+                  href={`/daos/${dao.id}`}
                   className="text-blue-600 hover:text-blue-800 transition-colors"
                   aria-label={`View ${dao.name} details`}
                 >
@@ -71,7 +71,7 @@ const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
             <div>
               <div className="flex items-center space-x-2 justify-between">
                 <Link
-                  href={`/daos/${dao.name}`}
+                  href={`/daos/${dao.id}`}
                   className="text-blue-600 hover:text-blue-800 transition-colors"
                   aria-label={`View ${dao.name} details`}
                 >
