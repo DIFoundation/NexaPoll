@@ -1,9 +1,9 @@
 'use client'
-import { useState } from "react"
+// import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+// import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -33,12 +33,8 @@ type Activity = {
   }
 }
 
-type OverviewTabProps = {
-  daoId: string
-}
-
-export function OverviewTab({ daoId }: OverviewTabProps) {
-  const [activeTab, setActiveTab] = useState("overview")
+export function OverviewTab() {
+  // const [activeTab, setActiveTab] = useState("overview")
   
   // TODO: Fetch DAO data from contract or API
   const daoData = {

@@ -30,11 +30,7 @@ type Transaction = {
   status: 'completed' | 'pending' | 'failed'
 }
 
-type TreasuryTabProps = {
-  daoId: string
-}
-
-export function TreasuryTab({ daoId }: TreasuryTabProps) {
+export function TreasuryTab() {
   const [activeTab, setActiveTab] = useState('assets')
   
   // TODO: Fetch assets and transactions from contract or API

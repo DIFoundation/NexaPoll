@@ -132,7 +132,7 @@ export default function Team() {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-12 text-white text-center">
           <h3 className="text-2xl font-bold mb-4">Join Our Mission</h3>
           <p className="text-xl text-blue-100 mb-6 max-w-2xl mx-auto">
-            We're always looking for talented individuals who share our passion for decentralized governance.
+            We&apos;re always looking for talented individuals who share our passion for decentralized governance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button className="inline-flex items-center px-6 py-3 rounded-lg bg-white text-blue-600 font-semibold hover:bg-gray-50 transition-colors">

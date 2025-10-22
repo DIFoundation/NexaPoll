@@ -174,7 +174,7 @@ const DAOGrid: React.FC = () => {
     filteredDAOs,
     categoryOptions,
     statusOptions,
-    totalDAOs,
+    // totalDAOs,
     currentPage,
     itemsPerPage,
     totalPages,
