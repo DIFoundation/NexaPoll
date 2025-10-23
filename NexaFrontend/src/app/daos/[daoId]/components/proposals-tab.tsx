@@ -20,11 +20,7 @@ type Proposal = {
   quorum: number
 }
 
-type ProposalsTabProps = {
-  daoId: string
-}
-
-export function ProposalsTab({ daoId }: ProposalsTabProps) {
+export function ProposalsTab() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
