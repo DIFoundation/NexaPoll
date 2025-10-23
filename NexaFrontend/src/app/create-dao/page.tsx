@@ -1,10 +1,9 @@
 'use client'
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
-import { useAppKitNetwork } from '@reown/appkit/react'
+// import { useAppKitNetwork } from '@reown/appkit/react'
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
-import Footer from '../../components/Footer';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -370,16 +369,16 @@ export default function CreateDAOPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<DaoFormData>(INITIAL_FORM_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [deployedAddresses, setDeployedAddresses] = useState<{
-    governor: string;
-    timelock: string;
-    treasury: string;
-    token: string;
-  } | null>(null);
+  // const [deployedAddresses, setDeployedAddresses] = useState<{
+    // governor: string;
+    // timelock: string;
+    // treasury: string;
+    // token: string;
+  // } | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof DaoFormData, string>>>({});
   
   const { isConnected } = useAccount();
-  const { chainId } = useAppKitNetwork();
+  // const { chainId } = useAppKitNetwork();
   // const { data: signer } = useSigner();
   const router = useRouter();
 
@@ -459,14 +458,14 @@ export default function CreateDAOPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Mock addresses - in a real app, these would come from the contract deployment transactions
-      const mockAddresses = {
-        governor: '0x1234...5678',
-        timelock: '0x5678...1234',
-        treasury: '0x9abc...def0',
-        token: formData.tokenType === 'ERC20' ? '0xdef0...9abc' : '0xdef0...9abc',
-      };
+      // const mockAddresses = {
+      //   governor: '0x1234...5678',
+      //   timelock: '0x5678...1234',
+      //   treasury: '0x9abc...def0',
+      //   token: formData.tokenType === 'ERC20' ? '0xdef0...9abc' : '0xdef0...9abc',
+      // };
       
-      setDeployedAddresses(mockAddresses);
+      // setDeployedAddresses(mockAddresses);
       setCurrentStep(5); // Show success step
       
     } catch (error) {

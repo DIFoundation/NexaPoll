@@ -20,11 +20,17 @@ type Proposal = {
   quorum: number
 }
 
-export function ProposalsTab() {
+interface ProposalsTabProps {
+  daoId: string;
+}
+
+export function ProposalsTab({ daoId }: ProposalsTabProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("newest")
+  
+  console.log("daoId for proposals tab", daoId);
   
   // TODO: Fetch proposals from contract or API
   const proposals: Proposal[] = [

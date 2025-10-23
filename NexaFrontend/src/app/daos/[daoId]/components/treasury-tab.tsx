@@ -28,9 +28,16 @@ type Transaction = {
   timestamp: string
   txHash: string
   status: 'completed' | 'pending' | 'failed'
+} 
+
+interface TreasuryTabProps {
+  daoId: string;
 }
 
-export function TreasuryTab() {
+export function TreasuryTab({ daoId }: TreasuryTabProps) {
+
+  console.log("daoId for treasury tab", daoId);
+  
   const [activeTab, setActiveTab] = useState('assets')
   
   // TODO: Fetch assets and transactions from contract or API
