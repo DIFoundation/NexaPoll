@@ -38,7 +38,7 @@ export function OverviewTab() {
   
   // TODO: Fetch DAO data from contract or API
   const daoData = {
-    name: 'Nexa DAO',
+    name: "NexaDAO",
     description: 'A decentralized autonomous organization focused on building the future of web3 governance.',
     members: 1245,
     totalProposals: 124,

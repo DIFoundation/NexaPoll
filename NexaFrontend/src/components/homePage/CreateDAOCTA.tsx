@@ -60,7 +60,7 @@ export default function CreateDAOCTA() {
                 <p className="text-blue-100 text-lg mb-8 leading-relaxed">
                   Create a fully functional decentralized autonomous organization in minutes.
                   Equip your community with powerful governance tools, transparent voting,
-                  and secure treasury management—all on the blockchain.
+                  and secure treasury management-all on the blockchain.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
                   {/* <div className="relative inline-block"> */}
@@ -75,7 +75,7 @@ export default function CreateDAOCTA() {
                         disabled={!isConnected}
                         variant='default'
                         size='lg'
-                        className='flex items-center gap-2 h-12 bg-white text-blue-600 font-semibold cursor-pointer hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5'
+                        className='flex items-center gap-2 h-12 w-full bg-white text-blue-600 font-semibold cursor-pointer hover:bg-blue-50 transition-all duration-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5'
                       >
                         <Plus className="w-5 h-5 mr-2" />
                         Create Your DAO Now

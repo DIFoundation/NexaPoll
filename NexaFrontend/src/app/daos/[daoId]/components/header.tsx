@@ -1,8 +1,8 @@
 'use client'
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Check, Plus, Share2, Star } from "lucide-react"
-import { useParams } from "next/navigation"
+import { ArrowLeft, Check, Plus, Share2, Star } from "lucide-react"
+import { useParams, useRouter } from "next/navigation"
 
 export function Header() {
 
@@ -10,11 +10,22 @@ export function Header() {
   const daoName = params.daoId
   console.log("========", daoName, "==========")
   const daoDescription = "A decentralized organization focused on building the future of web3 governance."
-  
+  const router = useRouter()
+
   return (
     <header className="border-b">
-      <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-600" />
-      
+      <div className="">
+        <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-600" />
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="absolute top-4 left-4 text-white"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back
+        </Button>
+      </div>
+
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between -mt-12 mb-8">
           <div className="flex items-end space-x-6">
@@ -27,13 +38,13 @@ export function Header() {
                 <Check className="h-4 w-4 text-white" />
               </div>
             </div>
-            
+
             <div className="pb-2">
               <h1 className="text-2xl font-bold">{daoName}</h1>
               <p className="text-muted-foreground max-w-2xl">{daoDescription}</p>
             </div>
           </div>
-          
+
           <div className="flex space-x-2 mt-4 md:mt-0">
             <Button variant="outline">
               <Share2 className="mr-2 h-4 w-4" />
@@ -45,7 +56,7 @@ export function Header() {
             </Button>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-between py-4">
           <div className="flex items-center space-x-6 text-sm">
             <div>
@@ -61,7 +72,7 @@ export function Header() {
               <div className="font-medium">89</div>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">
               <Share2 className="mr-2 h-4 w-4" />

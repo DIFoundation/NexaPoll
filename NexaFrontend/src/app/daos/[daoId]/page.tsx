@@ -7,15 +7,7 @@ import { TokenTab } from "./components/token-tab"
 import { SettingsTab } from "./components/settings-tab"
 import { Header } from "./components/header"
 
-interface PageProps {
-  params: {
-    daoId: string
-  }
-}
-
-export default function DAODashboardPage({
-  params,
-}: PageProps) {
+const DAODashboardPage = ({ params }: { params: { daoId: string } }) => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -61,3 +53,5 @@ export default function DAODashboardPage({
     </div>
   )
 }
+
+export default DAODashboardPage;
