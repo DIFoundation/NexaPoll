@@ -6,8 +6,16 @@ import { MembersTab } from "./components/members-tab"
 import { TokenTab } from "./components/token-tab"
 import { SettingsTab } from "./components/settings-tab"
 import { Header } from "./components/header"
+import { useParams } from "next/navigation"
 
-const DAODashboardPage = ({ params }: { params: { daoId: string } }) => {
+interface PageProps {
+  params: {
+    daoId: string;
+  };
+}
+
+const DAODashboardPage = ({ params }: PageProps) => {
+  const { daoId } = params;
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -26,27 +34,27 @@ const DAODashboardPage = ({ params }: { params: { daoId: string } }) => {
           </div>
 
           <TabsContent value="overview" className="space-y-4">
-            <OverviewTab daoId={params.daoId} />
+            <OverviewTab daoId={daoId} />
           </TabsContent>
           
           <TabsContent value="proposals" className="space-y-4">
-            <ProposalsTab daoId={params.daoId} />
+            <ProposalsTab daoId={daoId} />
           </TabsContent>
           
           <TabsContent value="treasury" className="space-y-4">
-            <TreasuryTab daoId={params.daoId} />
+            <TreasuryTab daoId={daoId} />
           </TabsContent>
           
           <TabsContent value="members" className="space-y-4">
-            <MembersTab daoId={params.daoId} />
+            <MembersTab daoId={daoId} />
           </TabsContent>
           
           <TabsContent value="token" className="space-y-4">
-            <TokenTab daoId={params.daoId} />
+            <TokenTab daoId={daoId} />
           </TabsContent>
           
           <TabsContent value="settings" className="space-y-4">
-            <SettingsTab daoId={params.daoId} />
+            <SettingsTab daoId={daoId} />
           </TabsContent>
         </Tabs>
       </div>

@@ -33,7 +33,14 @@ const SettingSection = ({ title, description, children, className = "" }: Settin
   </div>
 )
 
-export function SettingsTab() {
+interface SettingsTabProps {
+  daoId: string;
+}
+
+export function SettingsTab({ daoId }: SettingsTabProps) {
+
+  console.log("daoId for settings tab", daoId);
+  
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("general")
   const [isLoading, setIsLoading] = useState(false)
@@ -102,7 +109,8 @@ export function SettingsTab() {
       setFormData(prev => ({
         ...prev,
         [parent]: {
-          ...(prev[parent as keyof typeof prev] || {}),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ...(prev[parent as keyof typeof prev] as Record<string, any> || {}),
           [child]: value
         }
       }))

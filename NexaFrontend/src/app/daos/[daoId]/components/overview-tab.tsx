@@ -33,8 +33,14 @@ type Activity = {
   }
 }
 
-export function OverviewTab() {
+interface OverviewTabProps {
+  daoId: string;
+}
+
+export function OverviewTab({ daoId }: OverviewTabProps) {
   // const [activeTab, setActiveTab] = useState("overview")
+
+  console.log("daoId for overview tab", daoId);
   
   // TODO: Fetch DAO data from contract or API
   const daoData = {

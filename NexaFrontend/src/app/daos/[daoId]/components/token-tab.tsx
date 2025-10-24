@@ -24,7 +24,14 @@ type TokenTransaction = {
   timestamp: string
 }
 
-export function TokenTab() {
+interface TokenTabProps {
+  daoId: string;
+}
+
+export function TokenTab({ daoId }: TokenTabProps) {
+
+  console.log("daoId for token tab", daoId);
+  
   const [activeTab, setActiveTab] = useState('overview')
   
   // TODO: Fetch token data from contract or API

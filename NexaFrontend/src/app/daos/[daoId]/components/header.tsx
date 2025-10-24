@@ -21,7 +21,7 @@ export function Header() {
           onClick={() => router.back()}
           className="absolute top-4 left-4 text-white"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
+          <ArrowLeft className="mr-1 h-4 w-4" />
           Back
         </Button>
       </div>
