@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Check, Plus, Share2, Star } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { CreateProposalModal } from "@/components/proposal/create-proposal-modal"
+import { useState } from "react"
 
 interface HeaderProps {
   daoId: string;
@@ -13,6 +15,8 @@ export function DaoHeader({ daoId }: HeaderProps) {
   const daoName = daoId
   const daoDescription = "A decentralized organization focused on building the future of web3 governance."
   const router = useRouter()
+
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   return (
     <header className="border-b">
@@ -52,10 +56,17 @@ export function DaoHeader({ daoId }: HeaderProps) {
               <Share2 className="mr-2 h-4 w-4" />
               Share
             </Button>
-            <Button>
+
+            <Button onClick={() => setIsCreateModalOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Create Proposal
             </Button>
+
+            <CreateProposalModal 
+              isOpen={isCreateModalOpen} 
+              onClose={() => setIsCreateModalOpen(false)}
+              daoId={daoId}
+            />
           </div>
         </div>
 

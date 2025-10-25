@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowRight, FileText, Plus, Search } from "lucide-react"
+import { CreateProposalModal } from "@/components/proposal/create-proposal-modal"
 
 type Proposal = {
   id: number
@@ -29,6 +30,7 @@ export function ProposalsTab({ daoId }: ProposalsTabProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("newest")
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   
   // TODO: Fetch proposals from contract or API
   const proposals: Proposal[] = [
@@ -150,35 +152,53 @@ export function ProposalsTab({ daoId }: ProposalsTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search proposals..."
-              className="pl-9 w-full md:w-[300px]"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="relative w-full sm:w-auto">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search proposals..."
+            className="pl-9 w-full sm:w-[300px]"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
         
-        <div className="flex items-center space-x-2">
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest</SelectItem>
-              <SelectItem value="oldest">Oldest</SelectItem>
-              <SelectItem value="votes">Most Voted</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">Status:</span>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Proposals</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="passed">Passed</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="executed">Executed</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           
-          <Button onClick={() => router.push(`/daos/${daoId}/proposals/new`)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Create Proposal
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">Sort by:</span>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="oldest">Oldest</SelectItem>
+                <SelectItem value="mostVotes">Most Votes</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <Button 
+            className="w-full sm:w-auto mt-2 sm:mt-0"
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <Plus className="mr-2 h-4 w-4" /> Create Proposal
           </Button>
         </div>
       </div>
@@ -278,7 +298,7 @@ export function ProposalsTab({ daoId }: ProposalsTabProps) {
                 : 'Get started by creating a new proposal.'}
             </p>
             <div className="mt-6">
-              <Button onClick={() => router.push(`/daos/${daoId}/proposals/new`)}>
+              <Button onClick={() => setIsCreateModalOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 New Proposal
               </Button>
@@ -286,6 +306,11 @@ export function ProposalsTab({ daoId }: ProposalsTabProps) {
           </div>
         )}
       </div>
+      <CreateProposalModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)}
+        daoId={daoId}
+      />
     </div>
   )
 }
