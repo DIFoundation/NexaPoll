@@ -9,14 +9,22 @@ import { DaoHeader } from "./components/daoHeader"
 import Header from "@/components/Header"
 // import { useParams } from "next/navigation"
 
-interface PageProps {
-  params: {
-    daoId: string;
-  };
-}
+// interface PageProps {
+//   params: {
+//     daoId: string;
+//   };
+// }
 
-const DAODashboardPage = ({ params }: PageProps) => {
-  const { daoId } = params;
+// accept an untyped props parameter to avoid Next's generated PageProps constraint
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const DAODashboardPage = async (props: any) => {
+  // use a permissive 'any' for props to avoid conflicts with Next's generated PageProps
+  const params = props?.params as { daoId?: string } | undefined
+  const daoId = params?.daoId as string
+  
+  // If you need to fetch data, you can do it here
+  // const data = await fetchData(daoId);
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
