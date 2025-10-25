@@ -2,13 +2,15 @@
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Check, Plus, Share2, Star } from "lucide-react"
-import { useParams, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 
-export function Header() {
+interface HeaderProps {
+  daoId: string;
+}
 
-  const params = useParams()
-  const daoName = params.daoId
-  console.log("========", daoName, "==========")
+export function DaoHeader({ daoId }: HeaderProps) {
+
+  const daoName = daoId
   const daoDescription = "A decentralized organization focused on building the future of web3 governance."
   const router = useRouter()
 
@@ -19,7 +21,7 @@ export function Header() {
         <Button
           variant="ghost"
           onClick={() => router.back()}
-          className="absolute top-4 left-4 text-white"
+          className="absolute top-16 left-4 text-white"
         >
           <ArrowLeft className="mr-1 h-4 w-4" />
           Back

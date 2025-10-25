@@ -37,10 +37,8 @@ interface OverviewTabProps {
   daoId: string;
 }
 
-export function OverviewTab({ daoId }: OverviewTabProps) {
+export function OverviewTab({ }: OverviewTabProps) {
   // const [activeTab, setActiveTab] = useState("overview")
-
-  console.log("daoId for overview tab", daoId);
   
   // TODO: Fetch DAO data from contract or API
   const daoData = {
@@ -272,7 +270,7 @@ export function OverviewTab({ daoId }: OverviewTabProps) {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Recent Proposals */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 overflow-hidden">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>

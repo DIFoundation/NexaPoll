@@ -28,9 +28,7 @@ interface TokenTabProps {
   daoId: string;
 }
 
-export function TokenTab({ daoId }: TokenTabProps) {
-
-  console.log("daoId for token tab", daoId);
+export function TokenTab({ }: TokenTabProps) {
   
   const [activeTab, setActiveTab] = useState('overview')
   

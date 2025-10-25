@@ -34,9 +34,7 @@ interface TreasuryTabProps {
   daoId: string;
 }
 
-export function TreasuryTab({ daoId }: TreasuryTabProps) {
-
-  console.log("daoId for treasury tab", daoId);
+export function TreasuryTab({ }: TreasuryTabProps) {
   
   const [activeTab, setActiveTab] = useState('assets')
   
@@ -393,6 +391,8 @@ export function TreasuryTab({ daoId }: TreasuryTabProps) {
                             <Image 
                               src={asset.icon} 
                               alt={asset.name}
+                              width={20}
+                              height={20}
                               className="h-5 w-5 mr-2"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement
