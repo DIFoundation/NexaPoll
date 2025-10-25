@@ -5,8 +5,9 @@ import { TreasuryTab } from "./components/treasury-tab"
 import { MembersTab } from "./components/members-tab"
 import { TokenTab } from "./components/token-tab"
 import { SettingsTab } from "./components/settings-tab"
-import { Header } from "./components/header"
-import { useParams } from "next/navigation"
+import { DaoHeader } from "./components/daoHeader"
+import Header from "@/components/Header"
+// import { useParams } from "next/navigation"
 
 interface PageProps {
   params: {
@@ -19,6 +20,7 @@ const DAODashboardPage = ({ params }: PageProps) => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
+      <DaoHeader daoId={daoId} />
       
       <div className="container mx-auto px-4 py-8 flex-1">
         <Tabs defaultValue="overview" className="space-y-4">

@@ -23,9 +23,7 @@ interface MembersTabProps {
   daoId: string;
 }
 
-export function MembersTab({ daoId }: MembersTabProps) {
-
-  console.log("daoId for members tab", daoId);
+export function MembersTab({ }: MembersTabProps) {
   
   const [searchQuery, setSearchQuery] = useState("")
   const [activeFilter, setActiveFilter] = useState("all")

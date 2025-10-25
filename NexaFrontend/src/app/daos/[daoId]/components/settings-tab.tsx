@@ -37,9 +37,7 @@ interface SettingsTabProps {
   daoId: string;
 }
 
-export function SettingsTab({ daoId }: SettingsTabProps) {
-
-  console.log("daoId for settings tab", daoId);
+export function SettingsTab({ }: SettingsTabProps) {
   
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("general")
