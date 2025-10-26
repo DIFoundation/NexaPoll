@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { dummyDAOs } from '@/lib/daoData';
+import { getProposalsByDAO } from '@/lib/proposalData';
 import { getActiveProposals } from '@/lib/proposalData';
 import { Search, Users, FileText, Clock, TrendingUp, Zap, Sparkles, X, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import Link from 'next/link';
@@ -37,6 +38,7 @@ const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
   }, [dao.status]);
 
   const activeProposals = useMemo(() => getActiveProposals(dao.id), [dao.id]);
+  const proposals = useMemo(() => getProposalsByDAO(dao.id), [dao.id]);
 
   const getCategoryColor = useCallback((category: string) => {
     const colors: Record<string, string> = {
@@ -111,7 +113,7 @@ const DAOCard = React.memo(({ dao }: { dao: typeof dummyDAOs[0] }) => {
               <dt className="text-sm font-medium text-gray-500">Proposals</dt>
               <dd className="mt-1 text-sm font-medium text-gray-900 flex items-center justify-center">
                 <FileText className="h-4 w-4 mr-1 text-gray-400" />
-                {dao.proposals}
+                {proposals.length}
               </dd>
             </div>
             <div className="text-center">

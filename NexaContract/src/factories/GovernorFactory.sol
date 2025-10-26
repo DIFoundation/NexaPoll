@@ -217,4 +217,10 @@ contract GovernorFactory {
         assembly { mstore(temp, count) }
         return temp;
     }
+
+    function deleteDao(uint256 daoId) external {
+        require(daoId < daos.length, "DAO does not exist");
+        daos[daoId] = daos[daos.length - 1];
+        daos.pop();
+    }
 }
