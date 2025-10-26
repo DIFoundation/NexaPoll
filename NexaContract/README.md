@@ -3,7 +3,20 @@
 ### Build
 
 ```shell
-$ forge build
+$ 
+For CeloSepolia
+forge script script/Deploy.s.sol:DeployScript 
+    --rpc-url $CELOSEPOLIA_RPC_URL 
+    --broadcast
+    --etherscan-api-key $ETHERSCAN_API_KEY
+    --verify
+
+For BaseSepolia
+forge script script/Deploy.s.sol:DeployScript 
+    --rpc-url $BASESEPOLIA_RPC_URL 
+    --broadcast
+    --etherscan-api-key $ETHERSCAN_API_KEY
+    --verify
 ```
 
 contracts/

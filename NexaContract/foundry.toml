@@ -5,6 +5,21 @@ libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
 
-viaIR = true
+# Optimizer settings
 optimizer = true
-optimizerRuns = 1000
+optimizer_runs = 1000
+via_ir = true
+
+# Size optimization settings
+bytecode_hash = "none"
+metadata = { "bytecodeHash" = "none" }
+
+# Additional useful settings
+extra_output = ["metadata", "storageLayout"]
+extra_output_files = ["metadata", "storageLayout"]
+
+# EVM version
+# evm_version = "shanghai"
+
+# Increase the code size limit if needed
+# code_size = 24576  # Uncomment and adjust if you hit size limits
