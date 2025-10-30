@@ -3,6 +3,10 @@
 ### Build
 
 ```shell
+forge clean
+forge build
+forge inspect src/core/DGPGovernor.sol:DGPGovernor bytecode | wc -c
+
 $ 
 For CeloSepolia
 forge script script/Deploy.s.sol:DeployScript 
