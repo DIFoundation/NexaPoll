@@ -39,8 +39,8 @@ export function ProposalDetailsModal({ isOpen, onClose, proposal }: ProposalDeta
     queued: "bg-blue-100 text-blue-800",
   };
 
-  const startDate = new Date(proposal.startDate);
-  const endDate = new Date(proposal.endDate);
+  const startDate = new Date(proposal.startBlock);
+  const endDate = new Date(proposal.endBlock);
   const now = new Date();
   const isActive = now >= startDate && now <= endDate;
 
@@ -53,11 +53,11 @@ export function ProposalDetailsModal({ isOpen, onClose, proposal }: ProposalDeta
               <DialogTitle className="text-2xl font-bold">{proposal.title}</DialogTitle>
               <div className="flex items-center mt-2">
                 <Badge variant="secondary" className="mr-2">
-                  {proposal.type.charAt(0).toUpperCase() + proposal.type.slice(1)}
+                  {proposal.title.charAt(0).toUpperCase() + proposal.title.slice(1)}
                 </Badge>
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusColors[proposal.status]}`}>
-                  {statusIcons[proposal.status]}
-                  {statusText[proposal.status]}
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${statusColors.active}`}>
+                  {statusIcons.active}
+                  {statusText.active}
                 </div>
               </div>
             </div>

@@ -32,4 +32,5 @@ export type Proposal = {
   proposer: string;
   createdAt: string; // ISO date string
   updatedAt: string; // ISO date string
+  quorum: number;
 };
