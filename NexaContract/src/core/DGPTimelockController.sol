@@ -1,28 +1,52 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import "@openzeppelin/contracts/governance/TimelockController.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+
 /**
  * @title DGPTimelockController
- * @dev Enforces a mandatory delay before executing successful proposals.
- * Protects against malicious instant actions by giving community time to react.
+ * @dev Clonable timelock controller for EIP-1167 factories.
  */
-import "@openzeppelin/contracts/governance/TimelockController.sol";
+contract DGPTimelockController is TimelockController, Initializable {
+    bool private _initialized;
 
-contract DGPTimelockController is TimelockController {
+    constructor() TimelockController(0, new address , new address , msg.sender) {
+        // Disable logic contract initialization
+    }
+
     /**
-     * @param minDelay Minimum delay in seconds before execution
-     * @param proposers Array of addresses that can propose (typically the Governor)
-     * @param executors Array of addresses that can execute (address(0) = anyone can execute)
-     * @param admin Address with admin rights (should be renounced after setup)
+     * @dev Initializes a clone instance after deployment.
      */
-    constructor(
+    function initialize(
         uint256 minDelay,
         address[] memory proposers,
         address[] memory executors,
         address admin
-    )
-        TimelockController(minDelay, proposers, executors, admin)
-    {
+    ) external initializer {
         require(minDelay >= 1 days, "Delay too short for security");
+        __TimelockController_init(minDelay, proposers, executors, admin);
+    }
+
+    // Helper for internal OZ init (since their base doesn’t provide one)
+    function __TimelockController_init(
+        uint256 minDelay,
+        address[] memory proposers,
+        address[] memory executors,
+        address admin
+    ) internal {
+        // Reinitialize state variables (mimic constructor)
+        _setRoleAdmin(PROPOSER_ROLE, TIMELOCK_ADMIN_ROLE);
+        _setRoleAdmin(EXECUTOR_ROLE, TIMELOCK_ADMIN_ROLE);
+        _setRoleAdmin(CANCELLER_ROLE, TIMELOCK_ADMIN_ROLE);
+        _grantRole(TIMELOCK_ADMIN_ROLE, admin);
+        _updateDelay(minDelay);
+
+        for (uint256 i = 0; i < proposers.length; ++i) {
+            _grantRole(PROPOSER_ROLE, proposers[i]);
+        }
+        for (uint256 i = 0; i < executors.length; ++i) {
+            _grantRole(EXECUTOR_ROLE, executors[i]);
+        }
     }
 }
