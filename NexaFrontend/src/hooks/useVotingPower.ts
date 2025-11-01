@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useContractRead, useContractWrite, useWaitForTransaction } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract } from 'wagmi';
 import { Address, Hash } from 'viem';
 import { erc20VotingPower } from '@/lib/abi/core/votingPower/erc20';
 import { erc721VotingPower } from '@/lib/abi/core/votingPower/erc721';
@@ -37,77 +37,88 @@ export function useERC20VotingPower(contractAddress?: Address) {
   const {
     data: tokenName,
     refetch: refetchName,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'name',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: tokenSymbol,
     refetch: refetchSymbol,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'symbol',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: tokenDecimals,
     refetch: refetchDecimals,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'decimals',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: tokenTotalSupply,
     refetch: refetchTotalSupply,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'totalSupply',
-    enabled: !!contractAddress,
-    watch: true,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: tokenMaxSupply,
     refetch: refetchMaxSupply,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'maxSupply',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   // Account balance and voting power
   const {
     data: accountBalance,
     refetch: refetchBalance,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'balanceOf',
     args: account ? [account] : undefined,
-    enabled: !!contractAddress && !!account,
-    watch: true,
+    query: {
+      enabled: !!contractAddress && !!account,
+    },
   });
 
   const {
     data: currentVotes,
     refetch: refetchVotes,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'getVotes',
     args: account ? [account] : undefined,
-    enabled: !!contractAddress && !!account,
-    watch: true,
+    query: {
+      enabled: !!contractAddress && !!account,
+    },
   });
 
   // Token actions
@@ -116,7 +127,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
     data: transferTxData,
     isLoading: isTransferring,
     error: transferError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'transfer',
@@ -127,7 +138,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
     data: approveTxData,
     isLoading: isApproving,
     error: approveError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'approve',
@@ -138,7 +149,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
     data: delegateTxData,
     isLoading: isDelegating,
     error: delegateError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'delegate',
@@ -149,7 +160,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
     data: delegateBySigTxData,
     isLoading: isDelegatingBySig,
     error: delegateBySigError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'delegateBySig',
@@ -183,11 +194,13 @@ export function useERC20VotingPower(contractAddress?: Address) {
 
   const {
     refetch: refetchPastVotes,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'getPastVotes',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Get checkpoints for an account
@@ -225,24 +238,28 @@ export function useERC20VotingPower(contractAddress?: Address) {
 
   const {
     refetch: refetchNumCheckpoints,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'numCheckpoints',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   const {
     refetch: refetchCheckpoint,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'checkpoints',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Transfer tokens
-  const transferTokens = useCallback(async (to: Address, amount: bigint) => {
+  const transferTokens = useCallback(async (to    query: {: Address, amount: bigint) => {
     if (!transfer) {
       throw new Error('Contract not initialized');
     }
@@ -340,11 +357,13 @@ export function useERC20VotingPower(contractAddress?: Address) {
 
   const {
     refetch: refetchDelegates,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'delegates',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Get allowance for a spender
@@ -364,11 +383,13 @@ export function useERC20VotingPower(contractAddress?: Address) {
 
   const {
     refetch: refetchAllowance,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'allowance',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Refresh all data
@@ -446,80 +467,90 @@ export function useERC721VotingPower(contractAddress?: Address) {
   const {
     data: tokenName,
     refetch: refetchName,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'name',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: tokenSymbol,
     refetch: refetchSymbol,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'symbol',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: tokenTotalSupply,
     refetch: refetchTotalSupply,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'totalSupply',
-    enabled: !!contractAddress,
-    watch: true,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: tokenMaxSupply,
     refetch: refetchMaxSupply,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'maxSupply',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   // Account balance and voting power
   const {
     data: accountBalance,
     refetch: refetchBalance,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'balanceOf',
     args: account ? [account] : undefined,
-    enabled: !!contractAddress && !!account,
-    watch: true,
+    query: {
+      enabled: !!contractAddress && !!account,
+    },
   });
 
   const {
     data: currentVotes,
     refetch: refetchVotes,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'getVotes',
     args: account ? [account] : undefined,
-    enabled: !!contractAddress && !!account,
-    watch: true,
+    query: {
+      enabled: !!contractAddress && !!account,
+    },
   });
 
   // Get current delegate
   const {
     data: currentDelegate,
     refetch: refetchDelegate,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'delegates',
     args: account ? [account] : undefined,
-    enabled: !!contractAddress && !!account,
-    watch: true,
+    query: {
+      enabled: !!contractAddress && !!account,
+    },
   });
 
   // Token actions
@@ -528,7 +559,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
     data: transferTxData,
     isLoading: isTransferring,
     error: transferError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'safeTransferFrom',
@@ -539,7 +570,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
     data: approveTxData,
     isLoading: isApproving,
     error: approveError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'approve',
@@ -550,7 +581,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
     data: approvalForAllTxData,
     isLoading: isSettingApprovalForAll,
     error: approvalForAllError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'setApprovalForAll',
@@ -561,7 +592,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
     data: delegateTxData,
     isLoading: isDelegating,
     error: delegateError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'delegate',
@@ -572,7 +603,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
     data: mintTxData,
     isLoading: isMinting,
     error: mintError
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'mint',
@@ -630,11 +661,13 @@ export function useERC721VotingPower(contractAddress?: Address) {
 
   const {
     refetch: refetchTokenOfOwnerByIndex,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'tokenOfOwnerByIndex',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Fetch NFT details
@@ -660,29 +693,35 @@ export function useERC721VotingPower(contractAddress?: Address) {
 
   const {
     refetch: refetchOwnerOf,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'ownerOf',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   const {
     refetch: refetchTokenURI,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'tokenURI',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   const {
     refetch: refetchGetApproved,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'getApproved',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Get voting power at a specific block
@@ -702,11 +741,13 @@ export function useERC721VotingPower(contractAddress?: Address) {
 
   const {
     refetch: refetchPastVotes,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'getPastVotes',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Transfer NFT
@@ -832,11 +873,13 @@ export function useERC721VotingPower(contractAddress?: Address) {
 
   const {
     refetch: refetchIsApprovedForAll,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'isApprovedForAll',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Get past total supply at a specific block
@@ -856,11 +899,13 @@ export function useERC721VotingPower(contractAddress?: Address) {
 
   const {
     refetch: refetchPastTotalSupply,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'getPastTotalSupply',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Refresh all data

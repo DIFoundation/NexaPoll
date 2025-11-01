@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useContractRead, useContractWrite, useWaitForTransaction, useContractEvent } from 'wagmi';
+import { useState, useCallback } from 'react';
+import { useAccount, useReadContract, useWriteContract, useTransaction, useWatchContractEvent } from 'wagmi';
 import { Address } from 'viem';
 import { governorFactoryAbi } from '@/lib/abi/faoctories/governorFactory';
 
@@ -51,34 +51,40 @@ export function useGovernorFactory(contractAddress?: Address) {
     data: daoCount,
     isLoading: isLoadingDaoCount,
     refetch: refetchDaoCount,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorFactoryAbi,
     functionName: 'getDaoCount',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: allDAOs = [],
     isLoading: isLoadingAllDAOs,
     refetch: refetchAllDAOs,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorFactoryAbi,
     functionName: 'getAllDaos',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   }) as { data: DAOConfig[]; isLoading: boolean; refetch: () => void };
 
   const {
     data: userDAOs = [],
     isLoading: isLoadingUserDAOs,
     refetch: refetchUserDAOs,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorFactoryAbi,
     functionName: 'getDaosByCreator',
     args: [account as Address],
-    enabled: !!contractAddress && !!account,
+    query: {
+      enabled: !!contractAddress && !!account,
+    },
   }) as { data: Address[]; isLoading: boolean; refetch: () => void };
 
   // Write operations
@@ -87,7 +93,7 @@ export function useGovernorFactory(contractAddress?: Address) {
     data: createDAOTxData,
     isLoading: isCreateDAOLoading,
     error: createDAOError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: governorFactoryAbi,
     functionName: 'createDAO',
@@ -97,14 +103,14 @@ export function useGovernorFactory(contractAddress?: Address) {
     writeAsync: deleteDAO, 
     isLoading: isDeleteDAOLoading,
     error: deleteDAOError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: governorFactoryAbi,
     functionName: 'deleteDao',
   });
 
   // Wait for transaction to be mined
-  const { isLoading: isCreateDAOPending } = useWaitForTransaction({
+  const { isLoading: isCreateDAOPending } = useTransaction({
     hash: createDAOTxData?.hash,
     onSuccess: () => {
       // Refetch DAO data after successful creation
@@ -113,7 +119,7 @@ export function useGovernorFactory(contractAddress?: Address) {
   });
 
   // Listen for DAOCreated events
-  useContractEvent({
+  useWatchContractEvent({
     address: contractAddress,
     abi: governorFactoryAbi,
     eventName: 'DAOCreated',

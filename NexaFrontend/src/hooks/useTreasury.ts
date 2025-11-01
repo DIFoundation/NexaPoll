@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useContractRead, useContractWrite, useWaitForTransaction, useContractEvent } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useTransaction, useWatchContractEvent } from 'wagmi';
 import { Address } from 'viem';
 import { treasuryAbi } from '@/lib/abi/core/treasury';
 
@@ -18,22 +18,26 @@ export function useTreasury(contractAddress?: Address) {
     data: governor,
     isLoading: isLoadingGovernor,
     refetch: refetchGovernor,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: treasuryAbi,
     functionName: 'governor',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: timelock,
     isLoading: isLoadingTimelock,
     refetch: refetchTimelock,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: treasuryAbi,
     functionName: 'timelock',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   // Get ETH balance
@@ -41,12 +45,14 @@ export function useTreasury(contractAddress?: Address) {
     data: ethBalanceData,
     refetch: refetchEthBalance,
     isLoading: isLoadingEthBalance,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: treasuryAbi,
     functionName: 'getETHBalance',
-    enabled: !!contractAddress,
-    watch: true, // Auto-refresh when new blocks are mined
+    query: {
+      enabled: !!contractAddress,
+    },
+    // watch: true, // Auto-refresh when new blocks are mined
   });
 
   // Get token balance for a specific token
@@ -64,11 +70,13 @@ export function useTreasury(contractAddress?: Address) {
 
   const {
     refetch: refetchTokenBalance,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: treasuryAbi,
     functionName: 'getTokenBalance',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Write operations
@@ -77,7 +85,7 @@ export function useTreasury(contractAddress?: Address) {
     data: withdrawETHTxData,
     isLoading: isWithdrawETHLoading,
     error: withdrawETHError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: treasuryAbi,
     functionName: 'withdrawETH',
@@ -88,21 +96,21 @@ export function useTreasury(contractAddress?: Address) {
     data: withdrawTokenTxData,
     isLoading: isWithdrawTokenLoading,
     error: withdrawTokenError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: treasuryAbi,
     functionName: 'withdrawToken',
   });
 
   // Wait for transactions to be mined
-  const { isLoading: isWithdrawETHPending } = useWaitForTransaction({
+  const { isLoading: isWithdrawETHPending } = useTransaction({
     hash: withdrawETHTxData?.hash,
     onSuccess: () => {
       refetchEthBalance();
     },
   });
 
-  const { isLoading: isWithdrawTokenPending } = useWaitForTransaction({
+  const { isLoading: isWithdrawTokenPending } = useTransaction({
     hash: withdrawTokenTxData?.hash,
     onSuccess: (receipt) => {
       // Extract token address from transaction logs to refresh its balance
@@ -114,7 +122,7 @@ export function useTreasury(contractAddress?: Address) {
   });
 
   // Event listeners
-  useContractEvent({
+  useWatchContractEvent({
     address: contractAddress,
     abi: treasuryAbi,
     eventName: 'ETHReceived',
@@ -125,7 +133,7 @@ export function useTreasury(contractAddress?: Address) {
     },
   });
 
-  useContractEvent({
+  useWatchContractEvent({
     address: contractAddress,
     abi: treasuryAbi,
     eventName: 'ETHWithdrawn',
@@ -134,7 +142,7 @@ export function useTreasury(contractAddress?: Address) {
     },
   });
 
-  useContractEvent({
+  useWatchContractEvent({
     address: contractAddress,
     abi: treasuryAbi,
     eventName: 'TokenWithdrawn',

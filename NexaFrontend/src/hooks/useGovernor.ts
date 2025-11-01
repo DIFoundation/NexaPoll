@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useContractRead, useContractWrite, useWaitForTransaction } from 'wagmi';
-import { Address, Hash } from 'viem';
+import { useAccount, useReadContract, useWriteContract, useTransaction } from 'wagmi';
+import { Address } from 'viem';
 import { governorAbi } from '@/lib/abi/core/governor';
 
 export type VoteType = 0 | 1 | 2; // 0=Against, 1=For, 2=Abstain
@@ -51,61 +51,73 @@ export function useGovernor(contractAddress?: Address) {
   const {
     data: tokenAddress,
     refetch: refetchToken,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'token',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: timelockAddress,
     refetch: refetchTimelock,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'timelock',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: votingDelayData,
     refetch: refetchVotingDelay,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'votingDelay',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: votingPeriodData,
     refetch: refetchVotingPeriod,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'votingPeriod',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: proposalThresholdData,
     refetch: refetchProposalThreshold,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'proposalThreshold',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: quorumPercentageData,
     refetch: refetchQuorumPercentage,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'quorumPercentage',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   // Proposal actions
@@ -114,7 +126,7 @@ export function useGovernor(contractAddress?: Address) {
     data: proposeTxData,
     isLoading: isProposing,
     error: proposeError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'propose',
@@ -125,7 +137,7 @@ export function useGovernor(contractAddress?: Address) {
     data: voteTxData,
     isLoading: isVoting,
     error: voteError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'castVote',
@@ -136,7 +148,7 @@ export function useGovernor(contractAddress?: Address) {
     data: executeTxData,
     isLoading: isExecuting,
     error: executeError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'execute',
@@ -147,14 +159,14 @@ export function useGovernor(contractAddress?: Address) {
     data: cancelTxData,
     isLoading: isCanceling,
     error: cancelError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'cancel',
   });
 
   // Wait for transactions
-  useWaitForTransaction({
+  useTransaction({
     hash: proposeTxData?.hash,
     onSuccess: () => {
       // Refresh proposals after a new one is created
@@ -163,7 +175,7 @@ export function useGovernor(contractAddress?: Address) {
     },
   });
 
-  useWaitForTransaction({
+  useTransaction({
     hash: voteTxData?.hash,
     onSuccess: () => {
       // Refresh proposal state after voting
@@ -230,11 +242,13 @@ export function useGovernor(contractAddress?: Address) {
 
   const {
     refetch: refetchProposalMetadata,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'getProposalMetadata',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Create a new proposal
@@ -347,11 +361,13 @@ export function useGovernor(contractAddress?: Address) {
 
   const {
     refetch: refetchHasVoted,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'hasVoted',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Get vote power for an account at a specific block
@@ -371,11 +387,13 @@ export function useGovernor(contractAddress?: Address) {
 
   const {
     refetch: refetchVotes,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: governorAbi,
     functionName: 'getVotes',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Refresh all data
