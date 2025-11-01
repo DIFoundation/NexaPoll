@@ -30,8 +30,7 @@ contract GovernorFactory {
     // Only need implementations for small contracts
     address public immutable timelockImplementation;
     address public immutable treasuryImplementation;
-    address public immutable erc20Implementation;
-    address public immutable erc721Implementation;
+    address public immutable governorImplementation;
 
     DAOConfig[] private daos;
     mapping(address => address[]) private daosByCreator;
@@ -51,13 +50,11 @@ contract GovernorFactory {
     constructor(
         address _timelockImpl,
         address _treasuryImpl,
-        address _erc20Impl,
-        address _erc721Impl
+        address _governorImpl
     ) {
         timelockImplementation = _timelockImpl;
         treasuryImplementation = _treasuryImpl;
-        erc20Implementation = _erc20Impl;
-        erc721Implementation = _erc721Impl;
+        governorImplementation = _governorImpl;
     }
 
     function createDAO(
@@ -106,13 +103,20 @@ contract GovernorFactory {
         string memory baseURI
     ) internal returns (address) {
         if (tokenType == TokenType.ERC20) {
-            address clone = erc20Implementation.clone();
-            ERC20VotingPower(clone).initialize(tokenName, tokenSymbol, initialSupply, maxSupply, msg.sender);
-            return clone;
+            return address(new ERC20VotingPower(
+                tokenName,
+                tokenSymbol,
+                initialSupply,
+                maxSupply,
+                msg.sender
+            ));
         } else {
-            address clone = erc721Implementation.clone();
-            ERC721VotingPower(clone).initialize(tokenName, tokenSymbol, maxSupply, baseURI, msg.sender);
-            return clone;
+            return address(new ERC721VotingPower(
+                tokenName,
+                tokenSymbol,
+                maxSupply,
+                baseURI
+            ));
         }
     }
 
@@ -125,15 +129,17 @@ contract GovernorFactory {
         uint256 quorumPercentage
     ) internal returns (address) {
         // Deploy governor directly (not cloned)
-        return address(new DGPGovernor(
+        address clone = governorImplementation.clone();
+        DGPGovernor(payable(clone)).initialize(
             IVotes(token),
             DGPTimelockController(payable(timelock)),
-            votingDelay,
-            votingPeriod,
-            proposalThreshold,
-            quorumPercentage,
+            uint32(votingDelay),
+            uint32(votingPeriod),
+            uint256(proposalThreshold),
+            uint256(quorumPercentage),
             msg.sender
-        ));
+        );
+        return clone;
     }
 
     function _deployTreasury(address timelock) internal returns (address) {
