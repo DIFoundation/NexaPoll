@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
@@ -56,6 +55,7 @@ contract DGPGovernor is
     constructor() 
         Governor("") 
         GovernorSettings(0, 0, 0)
+        GovernorCountingSimple()
         GovernorVotes(IVotes(address(0)))
         GovernorTimelockControl(TimelockController(payable(address(0))))
         Ownable(address(0))
@@ -63,7 +63,7 @@ contract DGPGovernor is
 
     function initialize(
         IVotes _token,
-        TimelockController _timelock,
+        TimelockController,
         uint32 _votingDelay,
         uint32 _votingPeriod,
         uint256 _proposalThreshold,
