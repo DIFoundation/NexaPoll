@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useReadContract, useWriteContract, useTransaction, useWatchContractEvent } from 'wagmi';
+import { useReadContract, useWriteContract, useTransaction, useWatchContractEvent } from 'wagmi';
 import { Address } from 'viem';
 import { treasuryAbi } from '@/lib/abi/core/treasury';
 
@@ -9,7 +9,7 @@ export interface TreasuryConfig {
 }
 
 export function useTreasury(contractAddress?: Address) {
-  const { address: account } = useAccount();
+  // const { address: account } = useAccount();
   const [ethBalance, setEthBalance] = useState<bigint>(0n);
   const [tokenBalances, setTokenBalances] = useState<Record<Address, bigint>>({});
 
@@ -81,9 +81,9 @@ export function useTreasury(contractAddress?: Address) {
 
   // Write operations
   const { 
-    writeAsync: withdrawETH, 
+    writeContractAsync: withdrawETH, 
     data: withdrawETHTxData,
-    isLoading: isWithdrawETHLoading,
+    isPending: isWithdrawETHLoading,
     error: withdrawETHError
   } = useWriteContract({
     address: contractAddress,
@@ -92,9 +92,9 @@ export function useTreasury(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: withdrawToken, 
+    writeContractAsync: withdrawToken, 
     data: withdrawTokenTxData,
-    isLoading: isWithdrawTokenLoading,
+    isPending: isWithdrawTokenLoading,
     error: withdrawTokenError
   } = useWriteContract({
     address: contractAddress,

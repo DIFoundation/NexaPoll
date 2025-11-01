@@ -89,9 +89,9 @@ export function useGovernorFactory(contractAddress?: Address) {
 
   // Write operations
   const { 
-    writeAsync: createDAO, 
+    writeContractAsync: createDAO, 
     data: createDAOTxData,
-    isLoading: isCreateDAOLoading,
+    isPending: isCreateDAOLoading,
     error: createDAOError
   } = useWriteContract({
     address: contractAddress,
@@ -100,8 +100,8 @@ export function useGovernorFactory(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: deleteDAO, 
-    isLoading: isDeleteDAOLoading,
+    writeContractAsync: deleteDAO, 
+    isPending: isDeleteDAOLoading,
     error: deleteDAOError
   } = useWriteContract({
     address: contractAddress,
@@ -110,7 +110,7 @@ export function useGovernorFactory(contractAddress?: Address) {
   });
 
   // Wait for transaction to be mined
-  const { isLoading: isCreateDAOPending } = useTransaction({
+  const { isPending: isCreateDAOPending } = useTransaction({
     hash: createDAOTxData?.hash,
     onSuccess: () => {
       // Refetch DAO data after successful creation
@@ -193,7 +193,7 @@ export function useGovernorFactory(contractAddress?: Address) {
       });
 
       // Wait for the transaction to be mined
-      await tx.wait();
+      await tx.await();
       
       // Refetch DAO data after deletion
       await Promise.all([refetchDaoCount(), refetchAllDAOs(), refetchUserDAOs()]);

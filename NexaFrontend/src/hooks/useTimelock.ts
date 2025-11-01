@@ -33,7 +33,10 @@ export function useTimelock(contractAddress?: Address) {
   const { address: account } = useAccount();
   const [minDelay, setMinDelay] = useState<bigint>(0n);
   const [operations, setOperations] = useState<Record<string, OperationDetails>>({});
-  const [batchOperations, setBatchOperations] = useState<Record<string, BatchOperationDetails>>({});
+  const [
+    batchOperations,
+    // setBatchOperations
+  ] = useState<Record<string, BatchOperationDetails>>({});
 
   // Role hashes
   const {
@@ -118,9 +121,9 @@ export function useTimelock(contractAddress?: Address) {
 
   // Schedule a new operation
   const { 
-    writeAsync: scheduleOperation, 
+    writeContractAsync: scheduleOperation, 
     data: scheduleTxData,
-    isLoading: isScheduling,
+    isPending: isScheduling,
     error: scheduleError
   } = useWriteContract({
     address: contractAddress,
@@ -130,9 +133,9 @@ export function useTimelock(contractAddress?: Address) {
 
   // Schedule a batch operation
   const { 
-    writeAsync: scheduleBatchOperation, 
+    writeContractAsync: scheduleBatchOperation, 
     data: scheduleBatchTxData,
-    isLoading: isBatchScheduling,
+    isPending: isBatchScheduling,
     error: scheduleBatchError
   } = useWriteContract({
     address: contractAddress,
@@ -142,9 +145,9 @@ export function useTimelock(contractAddress?: Address) {
 
   // Execute an operation
   const { 
-    writeAsync: executeOperation, 
+    writeContractAsync: executeOperation, 
     data: executeTxData,
-    isLoading: isExecuting,
+    isPending: isExecuting,
     error: executeError
   } = useWriteContract({
     address: contractAddress,
@@ -154,9 +157,9 @@ export function useTimelock(contractAddress?: Address) {
 
   // Cancel an operation
   const { 
-    writeAsync: cancelOperation, 
+    writeContractAsync: cancelOperation, 
     data: cancelTxData,
-    isLoading: isCancelling,
+    isPending: isCancelling,
     error: cancelError
   } = useWriteContract({
     address: contractAddress,
@@ -256,7 +259,9 @@ export function useTimelock(contractAddress?: Address) {
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'getOperationState',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Schedule a new operation
@@ -342,7 +347,9 @@ export function useTimelock(contractAddress?: Address) {
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'isOperationReady',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Refresh all data

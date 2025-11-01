@@ -123,10 +123,10 @@ export function useERC20VotingPower(contractAddress?: Address) {
 
   // Token actions
   const { 
-    writeAsync: transfer, 
-    data: transferTxData,
-    isLoading: isTransferring,
-    error: transferError
+    writeContractAsync: transfer, 
+    isPending: isTransferring,
+    error: transferError,
+    // data: transferTxData
   } = useWriteContract({
     address: contractAddress,
     abi: erc20VotingPower,
@@ -134,10 +134,10 @@ export function useERC20VotingPower(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: approve, 
-    data: approveTxData,
-    isLoading: isApproving,
-    error: approveError
+    writeContractAsync: approve, 
+    isPending: isApproving,
+    error: approveError,
+    // data: approveTxData
   } = useWriteContract({
     address: contractAddress,
     abi: erc20VotingPower,
@@ -145,9 +145,9 @@ export function useERC20VotingPower(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: delegate, 
-    data: delegateTxData,
-    isLoading: isDelegating,
+    writeContractAsync: delegate, 
+    // data: delegateTxData,
+    isPending: isDelegating,
     error: delegateError
   } = useWriteContract({
     address: contractAddress,
@@ -156,11 +156,11 @@ export function useERC20VotingPower(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: delegateBySig, 
-    data: delegateBySigTxData,
-    isLoading: isDelegatingBySig,
+    writeContractAsync: delegateBySig, 
+    // data: delegateBySigTxData,
+    isPending: isDelegatingBySig,
     error: delegateBySigError
-  } = useWriteContract({
+  } = useWriteContract({delegateVotes
     address: contractAddress,
     abi: erc20VotingPower,
     functionName: 'delegateBySig',
@@ -259,47 +259,56 @@ export function useERC20VotingPower(contractAddress?: Address) {
   });
 
   // Transfer tokens
-  const transferTokens = useCallback(async (to    query: {: Address, amount: bigint) => {
+  const transferTokens = useCallback(async (to: Address, amount: bigint) => {
     if (!transfer) {
       throw new Error('Contract not initialized');
     }
-
+    
     try {
-      const tx = await transfer({
+      const txHash = await transfer({
+        address: contractAddress!,
+        abi: erc20VotingPower,
+        functionName: 'transfer',
         args: [to, amount],
       });
-      return tx;
+      return txHash;
     } catch (error) {
       console.error('Error transferring tokens:', error);
       throw error;
     }
-  }, [transfer]);
+  }, [contractAddress, transfer]);
 
   // Approve spender
   const approveSpender = useCallback(async (spender: Address, amount: bigint) => {
     if (!approve) {
       throw new Error('Contract not initialized');
     }
-
+    
     try {
-      const tx = await approve({
+      const txHash = await approve({
+        address: contractAddress!,
+        abi: erc20VotingPower,
+        functionName: 'approve',
         args: [spender, amount],
       });
-      return tx;
+      return txHash;
     } catch (error) {
       console.error('Error approving spender:', error);
       throw error;
     }
-  }, [approve]);
+  }, [contractAddress, approve]);
 
   // Delegate voting power
   const delegateVotes = useCallback(async (delegatee: Address) => {
     if (!delegate) {
       throw new Error('Contract not initialized');
     }
-
+    
     try {
-      const tx = await delegate({
+      const txHash = await delegate({
+        address: contractAddress!,
+        abi: erc20VotingPower,
+        functionName: 'delegate',
         args: [delegatee],
       });
       
@@ -311,12 +320,12 @@ export function useERC20VotingPower(contractAddress?: Address) {
         }));
       }
       
-      return tx;
+      return txHash;
     } catch (error) {
       console.error('Error delegating votes:', error);
       throw error;
     }
-  }, [delegate, account]);
+  }, [contractAddress, delegate, account]);
 
   // Delegate votes by signature
   const delegateVotesBySig = useCallback(async (
@@ -330,17 +339,20 @@ export function useERC20VotingPower(contractAddress?: Address) {
     if (!delegateBySig) {
       throw new Error('Contract not initialized');
     }
-
+    
     try {
-      const tx = await delegateBySig({
+      const txHash = await delegateBySig({
+        address: contractAddress!,
+        abi: erc20VotingPower,
+        functionName: 'delegateBySig',
         args: [delegatee, nonce, expiry, v, r, s],
       });
-      return tx;
+      return txHash;
     } catch (error) {
       console.error('Error delegating votes by signature:', error);
       throw error;
     }
-  }, [delegateBySig]);
+  }, [contractAddress, delegateBySig]);
 
   // Get current delegate for an account
   const getDelegate = useCallback(async (account: Address): Promise<Address> => {
@@ -555,10 +567,10 @@ export function useERC721VotingPower(contractAddress?: Address) {
 
   // Token actions
   const { 
-    writeAsync: transfer, 
-    data: transferTxData,
-    isLoading: isTransferring,
-    error: transferError
+    writeContractAsync: transfer, 
+    isPending: isTransferring,
+    error: transferError,
+    // data: transferTxData
   } = useWriteContract({
     address: contractAddress,
     abi: erc721VotingPower,
@@ -566,10 +578,10 @@ export function useERC721VotingPower(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: approve, 
-    data: approveTxData,
-    isLoading: isApproving,
-    error: approveError
+    writeContractAsync: approve, 
+    isPending: isApproving,
+    error: approveError,
+    // data: approveTxData
   } = useWriteContract({
     address: contractAddress,
     abi: erc721VotingPower,
@@ -577,10 +589,10 @@ export function useERC721VotingPower(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: setApprovalForAll, 
-    data: approvalForAllTxData,
-    isLoading: isSettingApprovalForAll,
-    error: approvalForAllError
+    writeContractAsync: setApprovalForAll, 
+    isPending: isSettingApprovalForAll,
+    error: approvalForAllError,
+    // data: approvalForAllTxData
   } = useWriteContract({
     address: contractAddress,
     abi: erc721VotingPower,
@@ -588,10 +600,10 @@ export function useERC721VotingPower(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: delegateVotes, 
-    data: delegateTxData,
-    isLoading: isDelegating,
-    error: delegateError
+    writeContractAsync: delegateVotes, 
+    isPending: isDelegating,
+    error: delegateError,
+    // data: delegateTxData
   } = useWriteContract({
     address: contractAddress,
     abi: erc721VotingPower,
@@ -599,11 +611,11 @@ export function useERC721VotingPower(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: mint, 
-    data: mintTxData,
-    isLoading: isMinting,
-    error: mintError
-  } = useReadContract({
+    writeContractAsync: mint, 
+    isPending: isMinting,
+    error: mintError,
+    // data: mintTxData
+  } = useWriteContract({
     address: contractAddress,
     abi: erc721VotingPower,
     functionName: 'mint',
@@ -757,15 +769,18 @@ export function useERC721VotingPower(contractAddress?: Address) {
     }
 
     try {
-      const tx = await transfer({
+      const txHash = await transfer({
+        address: contractAddress!,
+        abi: erc721VotingPower,
+        functionName: 'safeTransferFrom',
         args: [from, to, tokenId],
       });
-      return tx;
+      return txHash;
     } catch (error) {
       console.error('Error transferring NFT:', error);
       throw error;
     }
-  }, [transfer]);
+  }, [contractAddress, transfer]);
 
   // Approve address to manage NFT
   const approveAddress = useCallback(async (to: Address, tokenId: bigint) => {
@@ -774,15 +789,18 @@ export function useERC721VotingPower(contractAddress?: Address) {
     }
 
     try {
-      const tx = await approve({
+      const txHash = await approve({
+        address: contractAddress!,
+        abi: erc721VotingPower,
+        functionName: 'approve',
         args: [to, tokenId],
       });
-      return tx;
+      return txHash;
     } catch (error) {
       console.error('Error approving address:', error);
       throw error;
     }
-  }, [approve]);
+  }, [contractAddress, approve]);
 
   // Set approval for all tokens
   const setOperatorApproval = useCallback(async (operator: Address, approved: boolean) => {
@@ -791,15 +809,18 @@ export function useERC721VotingPower(contractAddress?: Address) {
     }
 
     try {
-      const tx = await setApprovalForAll({
+      const txHash = await setApprovalForAll({
+        address: contractAddress!,
+        abi: erc721VotingPower,
+        functionName: 'setApprovalForAll',
         args: [operator, approved],
       });
-      return tx;
+      return txHash;
     } catch (error) {
       console.error('Error setting operator approval:', error);
       throw error;
     }
-  }, [setApprovalForAll]);
+  }, [contractAddress, setApprovalForAll]);
 
   // Delegate voting power
   const delegateVotingPower = useCallback(async (delegatee: Address) => {
@@ -808,19 +829,22 @@ export function useERC721VotingPower(contractAddress?: Address) {
     }
 
     try {
-      const tx = await delegateVotes({
+      const txHash = await delegateVotes({
+        address: contractAddress!,
+        abi: erc721VotingPower,
+        functionName: 'delegate',
         args: [delegatee],
       });
       
       // Update local state
       setDelegate(delegatee);
       
-      return tx;
+      return txHash;
     } catch (error) {
       console.error('Error delegating votes:', error);
       throw error;
     }
-  }, [delegateVotes]);
+  }, [contractAddress, delegateVotes]);
 
   // Mint new NFT (only for accounts with MINTER_ROLE)
   const mintNFT = useCallback(async (to: Address): Promise<bigint> => {
@@ -829,7 +853,10 @@ export function useERC721VotingPower(contractAddress?: Address) {
     }
 
     try {
-      const tx = await mint({
+      const txHash = await mint({
+        address: contractAddress!,
+        abi: erc721VotingPower,
+        functionName: 'mint',
         args: [to],
       });
       
@@ -841,7 +868,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
       console.error('Error minting NFT:', error);
       throw error;
     }
-  }, [mint]);
+  }, [contractAddress, mint]);
 
   // Get token URI
   const getTokenURI = useCallback(async (tokenId: bigint): Promise<string> => {
@@ -954,7 +981,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
     transfer: transferNFT,
     approve: approveAddress,
     setApprovalForAll: setOperatorApproval,
-    delegate: delegateVotingPower,
+    delegateVotes: delegateVotingPower,
     mint: mintNFT,
     getTokenURI,
     getVotesAtBlock,

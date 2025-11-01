@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useReadContract, useWriteContract, useTransaction } from 'wagmi';
+import { useReadContract, useWriteContract, useTransaction } from 'wagmi';
 import { Address } from 'viem';
 import { governorAbi } from '@/lib/abi/core/governor';
 
@@ -38,8 +38,11 @@ export interface Proposal {
 }
 
 export function useGovernor(contractAddress?: Address) {
-  const { address: account } = useAccount();
-  const [proposals, setProposals] = useState<Record<string, Proposal>>({});
+  // const { address: account } = useAccount();
+  const [
+    proposals,
+    // setProposals,
+  ] = useState<Record<string, Proposal>>({});
   const [votingToken, setVotingToken] = useState<Address | undefined>();
   const [timelock, setTimelock] = useState<Address | undefined>();
   const [votingDelay, setVotingDelay] = useState<bigint>(0n);
@@ -122,9 +125,9 @@ export function useGovernor(contractAddress?: Address) {
 
   // Proposal actions
   const { 
-    writeAsync: propose, 
+    writeContractAsync: propose, 
     data: proposeTxData,
-    isLoading: isProposing,
+    isPending: isProposing,
     error: proposeError
   } = useWriteContract({
     address: contractAddress,
@@ -133,9 +136,9 @@ export function useGovernor(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: castVote, 
+    writeContractAsync: castVote, 
     data: voteTxData,
-    isLoading: isVoting,
+    isPending: isVoting,
     error: voteError
   } = useWriteContract({
     address: contractAddress,
@@ -144,9 +147,9 @@ export function useGovernor(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: executeProposal, 
+    writeContractAsync: executeProposal, 
     data: executeTxData,
-    isLoading: isExecuting,
+    isPending: isExecuting,
     error: executeError
   } = useWriteContract({
     address: contractAddress,
@@ -155,9 +158,9 @@ export function useGovernor(contractAddress?: Address) {
   });
 
   const { 
-    writeAsync: cancelProposal, 
+    writeContractAsync: cancelProposal, 
     data: cancelTxData,
-    isLoading: isCanceling,
+    isPending: isCanceling,
     error: cancelError
   } = useWriteContract({
     address: contractAddress,
