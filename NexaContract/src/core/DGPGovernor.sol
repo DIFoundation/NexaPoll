@@ -6,11 +6,15 @@ import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import "@openzeppelin/contracts/governance/TimelockController.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 contract DGPGovernor is
+    Initializable,
     Governor,
     GovernorSettings,
     GovernorCountingSimple,
@@ -56,9 +60,15 @@ contract DGPGovernor is
 
     bool private _initialized;
 
-    constructor() Governor("DGPGovernor Base") GovernorSettings(0, 0, 0) GovernorVotes(IVotes(address(0))) GovernorTimelockControl(TimelockController(payable(address(0)))) Ownable(msg.sender) {
-        // Empty constructor for implementation contract
-        // Logic lives in initialize()
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() 
+        Governor("DGPGovernor Base") 
+        GovernorSettings(0, 0, 0) 
+        GovernorVotes(IVotes(address(0))) 
+        GovernorTimelockControl(TimelockController(payable(address(0))))
+        Ownable(msg.sender)
+    {
+        _disableInitializers();
     }
 
     /**
@@ -74,13 +84,13 @@ contract DGPGovernor is
         uint256 quorumPercentage_,
         address admin,
         string memory governorName
-    ) external {
+    ) external initializer {
         require(!_initialized, "Already initialized");
         _initialized = true;
 
-        // Internal Governor setup
+        // Initialize parent contracts
         __Governor_init(governorName);
-        __GovernorSettings_init(_votingDelay.toUint48(), _votingPeriod.toUint32(), _proposalThreshold);
+        __GovernorSettings_init(_votingDelay, _votingPeriod, _proposalThreshold);
         __GovernorVotes_init(_token);
         __GovernorTimelockControl_init(_timelock);
 
