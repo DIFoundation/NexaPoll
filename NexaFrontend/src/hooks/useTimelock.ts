@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useContractRead, useContractWrite, useWaitForTransaction, useContractEvent } from 'wagmi';
+import { useAccount, useReadContract, useWriteContract, useTransaction, useWatchContractEvent } from 'wagmi';
 import { Address, Hash } from 'viem';
 import { timelockAbi } from '@/lib/abi/core/timelock';
 
@@ -39,50 +39,60 @@ export function useTimelock(contractAddress?: Address) {
   const {
     data: adminRole,
     isLoading: isLoadingRoles,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'DEFAULT_ADMIN_ROLE',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: proposerRole,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'PROPOSER_ROLE',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: executorRole,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'EXECUTOR_ROLE',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   const {
     data: cancellerRole,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'CANCELLER_ROLE',
-    enabled: !!contractAddress,
+    query: {
+      enabled: !!contractAddress,
+    },
   });
 
   // Get minimum delay
   const {
     data: delayData,
     refetch: refetchMinDelay,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'getMinDelay',
-    enabled: !!contractAddress,
-    watch: true,
+    query: {
+      enabled: !!contractAddress,
+    },
+    // watch: true,
   });
 
   // Check roles for current account
@@ -97,11 +107,13 @@ export function useTimelock(contractAddress?: Address) {
 
   const {
     refetch: refetchHasRole,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'hasRole',
-    enabled: false, // We'll call this manually
+    query: {
+      enabled: false, // We'll call this manually
+    },
   });
 
   // Schedule a new operation
@@ -110,7 +122,7 @@ export function useTimelock(contractAddress?: Address) {
     data: scheduleTxData,
     isLoading: isScheduling,
     error: scheduleError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'schedule',
@@ -122,7 +134,7 @@ export function useTimelock(contractAddress?: Address) {
     data: scheduleBatchTxData,
     isLoading: isBatchScheduling,
     error: scheduleBatchError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'scheduleBatch',
@@ -134,7 +146,7 @@ export function useTimelock(contractAddress?: Address) {
     data: executeTxData,
     isLoading: isExecuting,
     error: executeError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'execute',
@@ -146,14 +158,14 @@ export function useTimelock(contractAddress?: Address) {
     data: cancelTxData,
     isLoading: isCancelling,
     error: cancelError
-  } = useContractWrite({
+  } = useWriteContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'cancel',
   });
 
   // Wait for transactions to be mined
-  useWaitForTransaction({
+  useTransaction({
     hash: scheduleTxData?.hash,
     onSuccess: () => {
       // Refresh operations after scheduling
@@ -162,7 +174,7 @@ export function useTimelock(contractAddress?: Address) {
     },
   });
 
-  useWaitForTransaction({
+  useTransaction({
     hash: executeTxData?.hash,
     onSuccess: () => {
       // Refresh operations after execution
@@ -170,7 +182,7 @@ export function useTimelock(contractAddress?: Address) {
   });
 
   // Event listeners
-  useContractEvent({
+  useWatchContractEvent({
     address: contractAddress,
     abi: timelockAbi,
     eventName: 'CallScheduled',
@@ -193,7 +205,7 @@ export function useTimelock(contractAddress?: Address) {
     },
   });
 
-  useContractEvent({
+  useWatchContractEvent({
     address: contractAddress,
     abi: timelockAbi,
     eventName: 'CallExecuted',
@@ -240,7 +252,7 @@ export function useTimelock(contractAddress?: Address) {
 
   const {
     refetch: refetchOperationState,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'getOperationState',
@@ -326,7 +338,7 @@ export function useTimelock(contractAddress?: Address) {
 
   const {
     refetch: refetchIsOperationReady,
-  } = useContractRead({
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'isOperationReady',
