@@ -5,18 +5,21 @@ import { ArrowLeft, Check, Plus, Share2, Star } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { CreateProposalModal } from "@/components/proposal/create-proposal-modal"
 import { useState } from "react"
+import { DAO } from "@/lib/types/dao"
 
-interface HeaderProps {
-  daoId: string;
+interface DaoHeaderProps {
+  dao: DAO
 }
 
-export function DaoHeader({ daoId }: HeaderProps) {
-
-  const daoName = daoId
-  const daoDescription = "A decentralized organization focused on building the future of web3 governance."
+export function DaoHeader({ dao }: DaoHeaderProps) {
   const router = useRouter()
-
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
+  const id = dao.id
+  const name = dao.name
+  const description = dao.description
+
+  console.log("details:", dao)
 
   return (
     <header className="border-b">
@@ -37,8 +40,8 @@ export function DaoHeader({ daoId }: HeaderProps) {
           <div className="flex items-end space-x-6">
             <div className="relative">
               <Avatar className="h-24 w-24 border-4 border-background">
-                <AvatarImage src="/placeholder-avatar.png" alt={daoName} />
-                <AvatarFallback>{daoName?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                <AvatarImage src="/placeholder-avatar.png" alt={name} />
+                <AvatarFallback>{name?.slice(0, 2).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="absolute -bottom-2 -right-2 bg-green-500 rounded-full p-1 border-2 border-background">
                 <Check className="h-4 w-4 text-white" />
@@ -46,8 +49,8 @@ export function DaoHeader({ daoId }: HeaderProps) {
             </div>
 
             <div className="pb-2">
-              <h1 className="text-2xl font-bold">{daoName}</h1>
-              <p className="text-muted-foreground max-w-2xl">{daoDescription}</p>
+              <h1 className="text-2xl font-bold">{name}</h1>
+              <p className="text-muted-foreground max-w-2xl">{description}</p>
             </div>
           </div>
 
@@ -65,7 +68,7 @@ export function DaoHeader({ daoId }: HeaderProps) {
             <CreateProposalModal 
               isOpen={isCreateModalOpen} 
               onClose={() => setIsCreateModalOpen(false)}
-              daoId={daoId}
+              daoId={id}
             />
           </div>
         </div>
