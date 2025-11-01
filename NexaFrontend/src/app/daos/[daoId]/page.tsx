@@ -7,28 +7,25 @@ import { TokenTab } from "./components/token-tab"
 import { SettingsTab } from "./components/settings-tab"
 import { DaoHeader } from "./components/daoHeader"
 import Header from "@/components/Header"
-// import { useParams } from "next/navigation"
+import { DAO, Proposal } from "@/lib/types/dao"
 
-// interface PageProps {
-//   params: {
-//     daoId: string;
-//   };
-// }
+interface PageProps {
+  dao: DAO
+  proposals: Proposal[]
+}
 
-// accept an untyped props parameter to avoid Next's generated PageProps constraint
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const DAODashboardPage = async (props: any) => {
-  // use a permissive 'any' for props to avoid conflicts with Next's generated PageProps
-  const params = props?.params as { daoId?: string } | undefined
-  const daoId = params?.daoId as string
-  
-  // If you need to fetch data, you can do it here
-  // const data = await fetchData(daoId);
+const DAODashboardPage = async ({ dao, proposals }: PageProps) => {
+  // const daoName = dao.name
+  // const daoId = dao.id
+  // const daoDescription = dao.description
+
+  console.log("proposals", proposals)
+  console.log("dao", dao)
   
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <DaoHeader daoId={daoId} />
+      <DaoHeader dao={dao} />
       
       <div className="container mx-auto px-4 py-8 flex-1">
         <Tabs defaultValue="overview" className="space-y-4">
@@ -44,27 +41,27 @@ const DAODashboardPage = async (props: any) => {
           </div>
 
           <TabsContent value="overview" className="space-y-4">
-            <OverviewTab daoId={daoId} />
+            <OverviewTab dao={dao} proposals={proposals} />
           </TabsContent>
           
           <TabsContent value="proposals" className="space-y-4">
-            <ProposalsTab daoId={daoId} />
+            <ProposalsTab daoId={dao.id} />
           </TabsContent>
           
           <TabsContent value="treasury" className="space-y-4">
-            <TreasuryTab daoId={daoId} />
+            <TreasuryTab daoId={dao.id} />
           </TabsContent>
           
           <TabsContent value="members" className="space-y-4">
-            <MembersTab daoId={daoId} />
+            <MembersTab daoId={dao.id} />
           </TabsContent>
           
           <TabsContent value="token" className="space-y-4">
-            <TokenTab daoId={daoId} />
+            <TokenTab daoId={dao.id} />
           </TabsContent>
           
           <TabsContent value="settings" className="space-y-4">
-            <SettingsTab daoId={daoId} />
+            <SettingsTab daoId={dao.id} />
           </TabsContent>
         </Tabs>
       </div>
