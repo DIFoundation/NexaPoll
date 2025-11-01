@@ -1,28 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/**
- * @title DGPTimelockController
- * @dev Enforces a mandatory delay before executing successful proposals.
- * Protects against malicious instant actions by giving community time to react.
- */
+// ============================================
+// DGPTimelockController.sol (Non-Upgradeable Clone Pattern)
+// ============================================
 import "@openzeppelin/contracts/governance/TimelockController.sol";
 
 contract DGPTimelockController is TimelockController {
-    /**
-     * @param minDelay Minimum delay in seconds before execution
-     * @param proposers Array of addresses that can propose (typically the Governor)
-     * @param executors Array of addresses that can execute (address(0) = anyone can execute)
-     * @param admin Address with admin rights (should be renounced after setup)
-     */
-    constructor(
+    bool private _initialized;
+
+    constructor() TimelockController(1 days, new address[](0), new address[](0), address(0)) {}
+
+    function initialize(
         uint256 minDelay,
         address[] memory proposers,
         address[] memory executors,
         address admin
-    )
-        TimelockController(minDelay, proposers, executors, admin)
-    {
+    ) external {
+        require(!_initialized, "Already initialized");
         require(minDelay >= 1 days, "Delay too short for security");
+        
+        _initialized = true;
+
+        // Grant roles
+        _grantRole(DEFAULT_ADMIN_ROLE, admin);
+        
+        for (uint256 i = 0; i < proposers.length; i++) {
+            _grantRole(PROPOSER_ROLE, proposers[i]);
+            _grantRole(CANCELLER_ROLE, proposers[i]);
+        }
+        
+        for (uint256 i = 0; i < executors.length; i++) {
+            _grantRole(EXECUTOR_ROLE, executors[i]);
+        }
     }
 }
