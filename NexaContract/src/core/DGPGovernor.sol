@@ -52,18 +52,17 @@ contract DGPGovernor is
     uint256 public constant MAX_VOTING_POWER = 10_000 * 1e18;
 
     // Empty constructor - implementation contract is never used directly
-    constructor() 
-        Governor("") 
-        GovernorSettings(0, 0, 0)
-        GovernorCountingSimple()
-        GovernorVotes(IVotes(address(0)))
-        GovernorTimelockControl(TimelockController(payable(address(0))))
-        Ownable(address(0))
+    constructor(IVotes _token, TimelockController _timelock)
+        Governor("DGPGovernor")
+        GovernorSettings(1 /* 1 block */, 100 /* 100 blocks */, 0)
+        GovernorVotes(_token)
+        GovernorTimelockControl(_timelock)
+        Ownable(msg.sender)
     {}
 
     function initialize(
         IVotes _token,
-        TimelockController,
+        TimelockController _timelock,
         uint32 _votingDelay,
         uint32 _votingPeriod,
         uint256 _proposalThreshold,
@@ -72,17 +71,19 @@ contract DGPGovernor is
     ) external {
         require(!_initialized, "Already initialized");
         require(quorumPercentage_ > 0 && quorumPercentage_ <= 100, "Invalid quorum percentage");
+        require(address(_token) != address(0), "Invalid token address");
+        require(address(_timelock) != address(0), "Invalid timelock address");
         
         _initialized = true;
-
-        // Manually set storage since we can't call parent constructors
+        votingToken = _token;
+        _quorumPercentage = quorumPercentage_;
+        
+        // Initialize parent contracts
         _setVotingDelay(_votingDelay);
         _setVotingPeriod(_votingPeriod);
         _setProposalThreshold(_proposalThreshold);
         
-        _quorumPercentage = quorumPercentage_;
-        votingToken = _token;
-        
+        // Transfer ownership to admin
         _transferOwnership(_admin);
     }
 
