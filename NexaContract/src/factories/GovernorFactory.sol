@@ -3,6 +3,8 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/governance/utils/IVotes.sol";
 import "@openzeppelin/contracts/proxy/Clones.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/governance/TimelockController.sol";
 
 import "../core/DGPGovernor.sol";
 import "../core/DGPTimelockController.sol";
@@ -10,14 +12,14 @@ import "../core/DGPTreasury.sol";
 import "../core/voting/ERC20VotingPower.sol";
 import "../core/voting/ERC721VotingPower.sol";
 
-contract GovernorFactory {
+contract GovernorFactory is Ownable {
     using Clones for address;
 
     enum TokenType { ERC20, ERC721 }
 
     struct DAOConfig {
         string daoName;
-        string metadataURI; // e.g. IPFS link or org description
+        string metadataURI;
         string daoDescription;
         address governor;
         address timelock;
@@ -50,15 +52,11 @@ contract GovernorFactory {
 
     event TokenDeployed(address indexed token, TokenType tokenType, string tokenName, string tokenSymbol);
 
-    /**
-     * @dev Pass addresses of deployed logic contracts (implementations) to the factory.
-     * The implementation contracts must be the clone-ready versions you already created.
-     */
     constructor(
         address _governorImplementation,
         address _timelockImplementation,
         address _treasuryImplementation
-    ) {
+    ) Ownable(msg.sender) {
         require(_governorImplementation != address(0), "Gov impl required");
         require(_timelockImplementation != address(0), "Timelock impl required");
         require(_treasuryImplementation != address(0), "Treasury impl required");
@@ -68,9 +66,6 @@ contract GovernorFactory {
         treasuryImplementation = _treasuryImplementation;
     }
 
-    /**
-     * @notice Create a new DAO (token, timelock clone, governor clone, treasury clone)
-     */
     function createDAO(
         string memory daoName,
         string memory daoDescription,
@@ -91,33 +86,51 @@ contract GovernorFactory {
         token = _deployToken(tokenType, tokenName, tokenSymbol, initialSupply, maxSupply, baseURI);
         emit TokenDeployed(token, tokenType, tokenName, tokenSymbol);
 
-        // 2) Clone timelock and initialize (factory is temporary admin)
-        timelock = _deployTimelock(timelockDelay);
+        // 2) Clone and initialize timelock
+        timelock = _deployTimelock(timelockDelay, msg.sender);
 
-        // 3) Clone governor and initialize (owner/admin of governor set to msg.sender)
-        governor = _deployGovernor(token, timelock, votingDelay, votingPeriod, proposalThreshold, quorumPercentage, daoName);
+        // 3) Clone and initialize governor
+        governor = _deployGovernor(
+            token,
+            timelock,
+            votingDelay,
+            votingPeriod,
+            proposalThreshold,
+            quorumPercentage,
+            daoName
+        );
 
-        // 4) Clone treasury and initialize (timelock is controller)
-        treasury = _deployTreasury(timelock, governor);
+        // 4) Clone and initialize treasury
+        treasury = _deployTreasury(timelock, governor, msg.sender);
 
         // 5) Configure token & timelock roles
         _configureRoles(tokenType, token, governor, timelock);
         _recordDAO(daoName, daoDescription, metadataURI, governor, timelock, treasury, token, tokenType);
 
-        // 6) Configure timelock roles (grant governor proposer/admin roles, create executor)
+        // 6) Configure timelock roles
         _configureTimelockRoles(timelock, governor);
     }
 
-    // ------------------ Internal deploy helpers (clones) ------------------
-
-    function _deployTimelock(uint256 delay) internal returns (address) {
-        // Clone the timelock implementation and initialize it.
+    function _deployTimelock(uint256 delay, address admin) internal returns (address) {
         address timelockClone = timelockImplementation.clone();
-        // Empty arrays for proposers/executors; we'll grant roles after init
-        address;
-        address;
-
-        DGPTimelockController(payable(timelockClone)).initialize(delay, proposers, executors, address(this));
+        
+        // Set up initial proposers and executors
+        address[] memory proposers = new address[](1);
+        address[] memory executors = new address[](1);
+        
+        // The governor will be the only proposer initially
+        proposers[0] = address(this); // Temporary, will be updated
+        
+        // Any address can execute after the delay
+        executors[0] = address(0);
+        
+        DGPTimelockController(payable(timelockClone)).initialize(
+            delay,
+            proposers,
+            executors,
+            admin // Initial admin
+        );
+        
         return timelockClone;
     }
 
@@ -130,10 +143,20 @@ contract GovernorFactory {
         string memory baseURI
     ) internal returns (address) {
         if (tokenType == TokenType.ERC20) {
-            // factory is msg.sender inside constructor here; keep as admin temporarily
-            return address(new ERC20VotingPower(tokenName, tokenSymbol, initialSupply, maxSupply, msg.sender));
+            return address(new ERC20VotingPower(
+                tokenName,
+                tokenSymbol,
+                initialSupply,
+                maxSupply,
+                address(this) // Factory will be the initial admin
+            ));
         } else {
-            return address(new ERC721VotingPower(tokenName, tokenSymbol, maxSupply, baseURI));
+            return address(new ERC721VotingPower(
+                tokenName,
+                tokenSymbol,
+                maxSupply,
+                baseURI
+            ));
         }
     }
 
@@ -147,48 +170,36 @@ contract GovernorFactory {
         string memory governorName
     ) internal returns (address) {
         address governorClone = governorImplementation.clone();
-        // initialize(IVotes _token, TimelockController _timelock, uint256 _votingDelay, uint256 _votingPeriod, uint256 _proposalThreshold, uint256 quorumPercentage_, address admin, string memory governorName)
         DGPGovernor(governorClone).initialize(
             IVotes(token),
-            DGPTimelockController(payable(timelock)),
+            TimelockController(payable(timelock)),
             votingDelay,
             votingPeriod,
             proposalThreshold,
             quorumPercentage,
-            msg.sender,       // owner/admin of governor contract -> DAO creator
+            msg.sender, // Owner/admin of governor contract -> DAO creator
             governorName
         );
         return governorClone;
     }
 
-    function _deployTreasury(address timelock, address governor) internal returns (address) {
+    function _deployTreasury(address timelock, address governor, address initialOwner) internal returns (address) {
         address treasuryClone = treasuryImplementation.clone();
-        DGPTreasury(treasuryClone).initialize(timelock, governor);
+        DGPTreasury(treasuryClone).initialize(timelock, governor, initialOwner);
         return treasuryClone;
     }
-
-    // ------------------ Configuration helpers ------------------
 
     function _configureRoles(TokenType tokenType, address token, address governor, address timelock) internal {
         if (tokenType == TokenType.ERC20) {
             ERC20VotingPower erc20 = ERC20VotingPower(token);
-
-            // Grant mint roles to governor & timelock, then remove factory privileges
-            erc20.grantRole(erc20.MINTER_ROLE(), address(governor));
+            erc20.grantRole(erc20.MINTER_ROLE(), governor);
             erc20.grantRole(erc20.MINTER_ROLE(), timelock);
-            erc20.revokeRole(erc20.MINTER_ROLE(), address(this));
-
-            // Transfer admin control of roles to Timelock (DAO)
             erc20.grantRole(erc20.DEFAULT_ADMIN_ROLE(), timelock);
             erc20.renounceRole(erc20.DEFAULT_ADMIN_ROLE(), address(this));
-
         } else {
             ERC721VotingPower erc721 = ERC721VotingPower(token);
-
-            erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
+            erc721.grantRole(erc721.MINTER_ROLE(), governor);
             erc721.grantRole(erc721.MINTER_ROLE(), timelock);
-            erc721.revokeRole(erc721.MINTER_ROLE(), address(this));
-
             erc721.grantRole(erc721.DEFAULT_ADMIN_ROLE(), timelock);
             erc721.renounceRole(erc721.DEFAULT_ADMIN_ROLE(), address(this));
         }
@@ -196,25 +207,16 @@ contract GovernorFactory {
 
     function _configureTimelockRoles(address timelock, address governor) internal {
         DGPTimelockController timelockContract = DGPTimelockController(payable(timelock));
-
-        bytes32 proposerRole = timelockContract.PROPOSER_ROLE();
-        bytes32 executorRole = timelockContract.EXECUTOR_ROLE();
-        bytes32 adminRole = timelockContract.DEFAULT_ADMIN_ROLE();
-
-        // Grant governor the ability to propose
-        timelockContract.grantRole(proposerRole, governor);
-
-        // Allow anyone to execute queued operations (optional)
-        timelockContract.grantRole(executorRole, address(0));
-
-        // Make governor the admin of timelock (so governance can change roles via proposals)
-        timelockContract.grantRole(adminRole, governor);
-
-        // Factory renounces admin role on timelock (factory was the initial admin)
-        timelockContract.renounceRole(adminRole, address(this));
+        
+        // Grant the governor the PROPOSER_ROLE
+        timelockContract.grantRole(timelockContract.PROPOSER_ROLE(), governor);
+        
+        // Grant the governor the EXECUTOR_ROLE (if needed)
+        timelockContract.grantRole(timelockContract.EXECUTOR_ROLE(), governor);
+        
+        // Revoke the factory's admin role
+        timelockContract.renounceRole(timelockContract.DEFAULT_ADMIN_ROLE(), address(this));
     }
-
-    // ------------------ DAO registry ------------------
 
     function _recordDAO(
         string memory daoName,
@@ -226,11 +228,10 @@ contract GovernorFactory {
         address token,
         TokenType tokenType
     ) internal {
-        uint256 daoId = daos.length;
-        daos.push(DAOConfig({
+        DAOConfig memory newDAO = DAOConfig({
             daoName: daoName,
-            metadataURI: metadataURI,
             daoDescription: daoDescription,
+            metadataURI: metadataURI,
             governor: governor,
             timelock: timelock,
             treasury: treasury,
@@ -238,48 +239,68 @@ contract GovernorFactory {
             tokenType: tokenType,
             creator: msg.sender,
             createdAt: block.timestamp
-        }));
+        });
 
+        daos.push(newDAO);
         daosByCreator[msg.sender].push(governor);
         isDAO[governor] = true;
 
-        emit DAOCreated(governor, timelock, treasury, daoName, token, tokenType, msg.sender, daoId);
+        emit DAOCreated(
+            governor,
+            timelock,
+            treasury,
+            daoName,
+            token,
+            tokenType,
+            msg.sender,
+            daos.length - 1
+        );
     }
 
-    // ------------------ Frontend helper views ------------------
+    // View functions remain the same...
+    function getDAO(uint256 index) external view returns (DAOConfig memory) {
+        require(index < daos.length, "DAO does not exist");
+        return daos[index];
+    }
 
-    function getDaoCount() external view returns (uint256) {
+    function getDAOCount() external view returns (uint256) {
         return daos.length;
     }
 
-    function getDao(uint256 daoId) external view returns (DAOConfig memory) {
-        require(daoId < daos.length, "DAO does not exist");
-        return daos[daoId];
-    }
-
-    function getAllDaos() external view returns (DAOConfig[] memory) {
-        return daos;
-    }
-
-    function getDaosByCreator(address creator) external view returns (address[] memory) {
-        return daosByCreator[creator];
+    function getDAOsByCreator(address creator) external view returns (DAOConfig[] memory) {
+        uint256 count = daosByCreator[creator].length;
+        DAOConfig[] memory creatorDAOs = new DAOConfig[](count);
+        
+        for (uint256 i = 0; i < count; i++) {
+            for (uint256 j = 0; j < daos.length; j++) {
+                if (daos[j].governor == daosByCreator[creator][i]) {
+                    creatorDAOs[i] = daos[j];
+                    break;
+                }
+            }
+        }
+        
+        return creatorDAOs;
     }
 
     function getDaosByTokenType(TokenType tokenType) external view returns (DAOConfig[] memory) {
-        uint256 len = daos.length;
-        DAOConfig[] memory temp = new DAOConfig[](len);
-        uint256 count;
-        for (uint256 i; i < len; ++i) {
-            if (daos[i].tokenType == tokenType) temp[count++] = daos[i];
+        uint256 count = 0;
+        for (uint256 i = 0; i < daos.length; i++) {
+            if (daos[i].tokenType == tokenType) {
+                count++;
+            }
         }
-        assembly { mstore(temp, count) }
-        return temp;
-    }
-
-    function deleteDao(uint256 daoId) external {
-        require(daoId < daos.length, "DAO does not exist");
-        // You may want to restrict this to the DAO creator or owner for safety
-        daos[daoId] = daos[daos.length - 1];
-        daos.pop();
+        
+        DAOConfig[] memory result = new DAOConfig[](count);
+        uint256 index = 0;
+        
+        for (uint256 i = 0; i < daos.length; i++) {
+            if (daos[i].tokenType == tokenType) {
+                result[index] = daos[i];
+                index++;
+            }
+        }
+        
+        return result;
     }
 }

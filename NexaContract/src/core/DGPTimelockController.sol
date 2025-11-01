@@ -9,14 +9,19 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
  * @dev Clonable timelock controller for EIP-1167 factories.
  */
 contract DGPTimelockController is TimelockController, Initializable {
-    bool private _initialized;
-
-    constructor() TimelockController(0, new address , new address , msg.sender) {
-        // Disable logic contract initialization
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() 
+        TimelockController(0, new address[](0), new address[](0), msg.sender) 
+    {
+        _disableInitializers();
     }
 
     /**
      * @dev Initializes a clone instance after deployment.
+     * @param minDelay Minimum delay for operations
+     * @param proposers Array of addresses that can propose operations
+     * @param executors Array of addresses that can execute operations
+     * @param admin Address of the admin that can manage the timelock
      */
     function initialize(
         uint256 minDelay,
@@ -25,6 +30,11 @@ contract DGPTimelockController is TimelockController, Initializable {
         address admin
     ) external initializer {
         require(minDelay >= 1 days, "Delay too short for security");
+        require(proposers.length > 0, "At least one proposer required");
+        require(executors.length > 0, "At least one executor required");
+        require(admin != address(0), "Invalid admin address");
+        
+        // Initialize the TimelockController
         __TimelockController_init(minDelay, proposers, executors, admin);
     }
 
