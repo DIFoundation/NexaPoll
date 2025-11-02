@@ -23,7 +23,7 @@ const Header = () => {
   // Links that are only visible when connected
   const connectedLinks = [
     { name: "Polls", path: "/polls" },
-    { name: "Create", path: "/create" },
+    { name: "Create", path: "/create-dao" },
   ];
 
   // Combine links based on connection state
