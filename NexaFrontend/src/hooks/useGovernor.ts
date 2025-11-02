@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useConfig } from 'wagmi';
+import { readContract } from '@wagmi/core';
 import { Address } from 'viem';
 import { governorAbi } from '@/lib/abi/core/governor';
 
@@ -31,11 +32,13 @@ export interface CreateProposalParams {
   metadata?: Omit<ProposalMetadata, 'proposer' | 'timestamp' | 'status' | 'votesFor' | 'votesAgainst' | 'quorumReachedPct'>;
 }
 
-export function useGovernor(contractAddress?: Address) {
+export const useGovernor = (contractAddress?: Address) => {
+  const config = useConfig();
+
   // Read governor state
   const {
     data: tokenAddress,
-    isLoading: isLoadingToken,
+    isPending: isLoadingToken,
     refetch: refetchToken,
   } = useReadContract({
     address: contractAddress,
@@ -48,7 +51,7 @@ export function useGovernor(contractAddress?: Address) {
 
   const {
     data: timelockAddress,
-    isLoading: isLoadingTimelock,
+    isPending: isLoadingTimelock,
     refetch: refetchTimelock,
   } = useReadContract({
     address: contractAddress,
@@ -61,7 +64,7 @@ export function useGovernor(contractAddress?: Address) {
 
   const {
     data: votingDelayData,
-    isLoading: isLoadingVotingDelay,
+    isPending: isLoadingVotingDelay,
     refetch: refetchVotingDelay,
   } = useReadContract({
     address: contractAddress,
@@ -74,7 +77,7 @@ export function useGovernor(contractAddress?: Address) {
 
   const {
     data: votingPeriodData,
-    isLoading: isLoadingVotingPeriod,
+    isPending: isLoadingVotingPeriod,
     refetch: refetchVotingPeriod,
   } = useReadContract({
     address: contractAddress,
@@ -87,7 +90,7 @@ export function useGovernor(contractAddress?: Address) {
 
   const {
     data: proposalThresholdData,
-    isLoading: isLoadingProposalThreshold,
+    isPending: isLoadingProposalThreshold,
     refetch: refetchProposalThreshold,
   } = useReadContract({
     address: contractAddress,
@@ -100,7 +103,7 @@ export function useGovernor(contractAddress?: Address) {
 
   const {
     data: quorumPercentageData,
-    isLoading: isLoadingQuorumPercentage,
+    isPending: isLoadingQuorumPercentage,
     refetch: refetchQuorumPercentage,
   } = useReadContract({
     address: contractAddress,
@@ -182,34 +185,35 @@ export function useGovernor(contractAddress?: Address) {
     if (!contractAddress) return null;
     
     try {
-      const state = await useReadContract({
+      const state = await readContract(config, {
         address: contractAddress,
         abi: governorAbi,
         functionName: 'state',
         args: [proposalId],
       });
-      return state.data as ProposalState;
+      return state as ProposalState;
     } catch (error) {
       console.error('Error fetching proposal state:', error);
       return null;
     }
-  }, [contractAddress]);
+  }, [contractAddress, config]);
 
   // Get proposal metadata
   const getProposalMetadata = useCallback(async (proposalId: bigint): Promise<ProposalMetadata | null> => {
     if (!contractAddress) return null;
     
     try {
-      const metadata = await useReadContract({
+      const metadata = await readContract(config, {
         address: contractAddress,
         abi: governorAbi,
         functionName: 'getProposalMetadata',
         args: [proposalId],
       });
       
-      if (!metadata.data) return null;
+      if (!metadata) return null;
       
-      const data = metadata.data as any[];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = metadata as any[];
       return {
         title: data[0],
         description: data[1],
@@ -230,7 +234,7 @@ export function useGovernor(contractAddress?: Address) {
       console.error('Error fetching proposal metadata:', error);
       return null;
     }
-  }, [contractAddress]);
+  }, [contractAddress, config]);
 
   // Create a new proposal
   const createProposal = useCallback(async (params: CreateProposalParams) => {
@@ -400,52 +404,53 @@ export function useGovernor(contractAddress?: Address) {
     if (!contractAddress) return false;
     
     try {
-      const result = await useReadContract({
+      const result = await readContract(config, {
         address: contractAddress,
         abi: governorAbi,
         functionName: 'hasVoted',
         args: [proposalId, account],
       });
-      return result.data as boolean;
+      return result as boolean;
     } catch (error) {
       console.error('Error checking if account has voted:', error);
       return false;
     }
-  }, [contractAddress]);
+  }, [contractAddress, config]);
 
   // Get vote power for an account at a specific block
   const getVotes = useCallback(async (account: Address, blockNumber: bigint): Promise<bigint> => {
     if (!contractAddress) return 0n;
     
     try {
-      const result = await useReadContract({
+      const result = await readContract(config, {
         address: contractAddress,
         abi: governorAbi,
         functionName: 'getVotes',
         args: [account, blockNumber],
       });
-      return BigInt(result.data?.toString() || '0');
+      return BigInt(String(result) || '0');
     } catch (error) {
       console.error('Error getting votes:', error);
       return 0n;
     }
-  }, [contractAddress]);
+  }, [contractAddress, config]);
 
   // Get proposal votes (for, against, abstain)
   const getProposalVotes = useCallback(async (proposalId: bigint) => {
     if (!contractAddress) return null;
     
     try {
-      const result = await useReadContract({
+      const result = await readContract(config, {
         address: contractAddress,
         abi: governorAbi,
         functionName: 'proposalVotes',
         args: [proposalId],
       });
       
-      if (!result.data) return null;
+      if (!result) return null;
       
-      const data = result.data as any[];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data = result as any[];
       return {
         againstVotes: data[0] as bigint,
         forVotes: data[1] as bigint,
@@ -455,7 +460,7 @@ export function useGovernor(contractAddress?: Address) {
       console.error('Error getting proposal votes:', error);
       return null;
     }
-  }, [contractAddress]);
+  }, [contractAddress, config]);
 
   // Refresh all data
   const refresh = useCallback(async () => {

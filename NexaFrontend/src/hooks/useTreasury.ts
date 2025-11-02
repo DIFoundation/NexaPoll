@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, useBalance } from 'wagmi';
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, useBalance, usePublicClient } from 'wagmi';
 import { Address } from 'viem';
 import { treasuryAbi } from '@/lib/abi/core/treasury';
 
@@ -22,6 +22,7 @@ export interface WithdrawTokenParams {
 export function useTreasury(contractAddress?: Address) {
   const [tokenBalances, setTokenBalances] = useState<Record<Address, bigint>>({});
   const [lastWithdrawnToken, setLastWithdrawnToken] = useState<Address | null>(null);
+  const publicClient = usePublicClient();
 
   // Read treasury configuration
   const {
@@ -104,7 +105,7 @@ export function useTreasury(contractAddress?: Address) {
   const { 
     isLoading: isWaitingForWithdrawToken,
     isSuccess: isWithdrawTokenSuccess,
-    data: withdrawTokenReceipt
+    // data: withdrawTokenReceipt
   } = useWaitForTransactionReceipt({
     hash: withdrawTokenTxHash,
   });
@@ -116,13 +117,6 @@ export function useTreasury(contractAddress?: Address) {
       refetchNativeBalance();
     }
   }, [isWithdrawETHSuccess, refetchEthBalance, refetchNativeBalance]);
-
-  useEffect(() => {
-    if (isWithdrawTokenSuccess && lastWithdrawnToken) {
-      // Refetch the specific token balance
-      getTokenBalance(lastWithdrawnToken);
-    }
-  }, [isWithdrawTokenSuccess, lastWithdrawnToken]);
 
   // Event listeners with proper onLogs syntax
   useWatchContractEvent({
@@ -151,9 +145,12 @@ export function useTreasury(contractAddress?: Address) {
     eventName: 'TokenWithdrawn',
     onLogs(logs) {
       logs.forEach(log => {
-        if ('args' in log && log.args?.token) {
-          const tokenAddress = log.args.token as Address;
-          getTokenBalance(tokenAddress);
+        if ('args' in log && log.args) {
+          const args = log.args as { token?: Address };
+          if (args.token) {
+            const tokenAddress = args.token;
+            getTokenBalance(tokenAddress);
+          }
         }
       });
     },
@@ -165,9 +162,12 @@ export function useTreasury(contractAddress?: Address) {
     eventName: 'TokenReceived',
     onLogs(logs) {
       logs.forEach(log => {
-        if ('args' in log && log.args?.token) {
-          const tokenAddress = log.args.token as Address;
-          getTokenBalance(tokenAddress);
+        if ('args' in log && log.args) {
+          const args = log.args as { token?: Address };
+          if (args.token) {
+            const tokenAddress = args.token;
+            getTokenBalance(tokenAddress);
+          }
         }
       });
     },
@@ -175,17 +175,17 @@ export function useTreasury(contractAddress?: Address) {
 
   // Get token balance for a specific token
   const getTokenBalance = useCallback(async (tokenAddress: Address): Promise<bigint> => {
-    if (!contractAddress) return 0n;
+    if (!contractAddress || !publicClient) return 0n;
     
     try {
-      const result = await useReadContract({
+      const result = await publicClient.readContract({
         address: contractAddress,
         abi: treasuryAbi,
         functionName: 'getTokenBalance',
         args: [tokenAddress],
       });
       
-      const balance = result.data ? BigInt(result.data.toString()) : 0n;
+      const balance = result ? BigInt(result.toString()) : 0n;
       
       // Cache the balance
       setTokenBalances(prev => ({
@@ -198,7 +198,14 @@ export function useTreasury(contractAddress?: Address) {
       console.error('Error fetching token balance:', error);
       return 0n;
     }
-  }, [contractAddress]);
+  }, [contractAddress, publicClient]);
+
+  useEffect(() => {
+    if (isWithdrawTokenSuccess && lastWithdrawnToken) {
+      // Refetch the specific token balance
+      getTokenBalance(lastWithdrawnToken);
+    }
+  }, [isWithdrawTokenSuccess, lastWithdrawnToken, getTokenBalance]);
 
   // Get multiple token balances
   const getTokenBalances = useCallback(async (tokenAddresses: Address[]): Promise<Record<Address, bigint>> => {
@@ -299,37 +306,36 @@ export function useTreasury(contractAddress?: Address) {
 
   // Check if treasury can receive ETH (has receive/fallback)
   const canReceiveETH = useCallback(async (): Promise<boolean> => {
-    if (!contractAddress) return false;
+    if (!contractAddress || !publicClient) return false;
     
     try {
-      const result = await useReadContract({
+      const result = await publicClient.readContract({
         address: contractAddress,
         abi: treasuryAbi,
         functionName: 'canReceiveETH',
       });
-      return result.data as boolean;
-    } catch (error) {
-      // If function doesn't exist, assume it can receive
-      return true;
+      return result as boolean;
+    } catch {
+      return false;
     }
-  }, [contractAddress]);
+  }, [contractAddress, publicClient]);
 
   // Get all tracked tokens (if contract supports it)
   const getTrackedTokens = useCallback(async (): Promise<Address[]> => {
-    if (!contractAddress) return [];
+    if (!contractAddress || !publicClient) return [];
     
     try {
-      const result = await useReadContract({
+      const result = await publicClient.readContract({
         address: contractAddress,
         abi: treasuryAbi,
         functionName: 'getTrackedTokens',
       });
-      return (result.data as Address[]) || [];
+      return (result as Address[]) || [];
     } catch (error) {
       console.error('Error getting tracked tokens:', error);
       return [];
     }
-  }, [contractAddress]);
+  }, [contractAddress, publicClient]);
 
   // Refresh all data
   const refresh = useCallback(async () => {

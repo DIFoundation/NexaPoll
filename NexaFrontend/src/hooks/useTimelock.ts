@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent } from 'wagmi';
-import { Address, Hash, keccak256, toHex } from 'viem';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent, usePublicClient } from 'wagmi';
+import { Address, Hash, keccak256, encodePacked } from 'viem';
 import { timelockAbi } from '@/lib/abi/core/timelock';
 
 export type OperationState = 0 | 1 | 2 | 3; // 0=Unset(Unknown), 1=Waiting(Pending), 2=Ready, 3=Done
@@ -52,7 +52,11 @@ const ZERO_HASH: Hash = '0x00000000000000000000000000000000000000000000000000000
 export function useTimelock(contractAddress?: Address) {
   const { address: account } = useAccount();
   const [operations, setOperations] = useState<Record<string, OperationDetails>>({});
-  const [batchOperations, setBatchOperations] = useState<Record<string, BatchOperationDetails>>({});
+  const [
+    batchOperations, 
+    // setBatchOperations
+  ] = useState<Record<string, BatchOperationDetails>>({});
+  const publicClient = usePublicClient();
 
   // Get role hashes (constants)
   const {
@@ -241,7 +245,8 @@ export function useTimelock(contractAddress?: Address) {
     onLogs(logs) {
       logs.forEach(log => {
         if ('args' in log && log.args) {
-          const { id, index, target, value, data, predecessor, delay } = log.args;
+          const args = log.args as { id?: Hash; index?: bigint; target?: Address; value?: bigint; data?: string; predecessor?: Hash; delay?: bigint };
+          const { id, target, value, data, predecessor, delay } = args;
           const operation: OperationDetails = {
             id: id as Hash,
             target: target as Address,
@@ -266,7 +271,8 @@ export function useTimelock(contractAddress?: Address) {
     onLogs(logs) {
       logs.forEach(log => {
         if ('args' in log && log.args) {
-          const { id } = log.args;
+          const args = log.args as { id?: Hash };
+          const { id } = args;
           setOperations(prev => {
             const updated = { ...prev };
             if (updated[id as string]) {
@@ -286,7 +292,8 @@ export function useTimelock(contractAddress?: Address) {
     onLogs(logs) {
       logs.forEach(log => {
         if ('args' in log && log.args) {
-          const { id } = log.args;
+          const args = log.args as { id?: Hash };
+          const { id } = args;
           setOperations(prev => {
             const updated = { ...prev };
             if (updated[id as string]) {
@@ -309,7 +316,10 @@ export function useTimelock(contractAddress?: Address) {
     salt: Hash
   ): Hash => {
     return keccak256(
-      toHex([target, value, data, predecessor, salt])
+      encodePacked(
+        ['address', 'uint256', 'bytes', 'bytes32', 'bytes32'],
+      [target, value, data as `0x${string}`, predecessor, salt]
+      )
     ) as Hash;
   }, []);
 
@@ -322,99 +332,102 @@ export function useTimelock(contractAddress?: Address) {
     salt: Hash
   ): Hash => {
     return keccak256(
-      toHex([targets, values, payloads, predecessor, salt])
+      encodePacked(
+        ['address[]', 'uint256[]', 'bytes[]', 'bytes32', 'bytes32'],
+        [targets, values, payloads as `0x${string}`[], predecessor, salt]
+      )
     ) as Hash;
   }, []);
 
   // Check operation state
   const getOperationState = useCallback(async (id: Hash): Promise<OperationState> => {
-    if (!contractAddress) return 0;
+    if (!contractAddress || !publicClient) return 0;
     
     try {
-      const result = await useReadContract({
+      const result = await publicClient.readContract({
         address: contractAddress,
         abi: timelockAbi,
         functionName: 'getOperationState',
         args: [id],
       });
-      return (result.data as OperationState) || 0;
+      return (result as OperationState) || 0;
     } catch (error) {
       console.error('Error getting operation state:', error);
       return 0;
     }
-  }, [contractAddress]);
+  }, [contractAddress, publicClient]);
 
   // Check if operation is ready
   const isOperationReady = useCallback(async (id: Hash): Promise<boolean> => {
-    if (!contractAddress) return false;
+    if (!contractAddress || !publicClient) return false;
     
     try {
-      const result = await useReadContract({
+      const result = await publicClient.readContract({
         address: contractAddress,
         abi: timelockAbi,
         functionName: 'isOperationReady',
         args: [id],
       });
-      return result.data as boolean;
+      return result as boolean;
     } catch (error) {
       console.error('Error checking if operation is ready:', error);
       return false;
     }
-  }, [contractAddress]);
+  }, [contractAddress, publicClient]);
 
   // Check if operation is pending
   const isOperationPending = useCallback(async (id: Hash): Promise<boolean> => {
-    if (!contractAddress) return false;
+    if (!contractAddress || !publicClient) return false;
     
     try {
-      const result = await useReadContract({
+      const result = await publicClient.readContract({
         address: contractAddress,
         abi: timelockAbi,
         functionName: 'isOperationPending',
         args: [id],
       });
-      return result.data as boolean;
+      return result as boolean;
     } catch (error) {
       console.error('Error checking if operation is pending:', error);
       return false;
     }
-  }, [contractAddress]);
+  }, [contractAddress, publicClient]);
 
   // Check if operation is done
   const isOperationDone = useCallback(async (id: Hash): Promise<boolean> => {
-    if (!contractAddress) return false;
+    if (!contractAddress || !publicClient) return false;
     
     try {
-      const result = await useReadContract({
+      const result = await publicClient.readContract({
         address: contractAddress,
         abi: timelockAbi,
         functionName: 'isOperationDone',
         args: [id],
       });
-      return result.data as boolean;
+      return result as boolean;
     } catch (error) {
       console.error('Error checking if operation is done:', error);
       return false;
     }
-  }, [contractAddress]);
+  }, [contractAddress, publicClient]);
 
   // Get timestamp when operation becomes ready
   const getTimestamp = useCallback(async (id: Hash): Promise<bigint> => {
-    if (!contractAddress) return 0n;
+    if (!contractAddress || !publicClient) return 0n;
     
     try {
-      const result = await useReadContract({
+      const result = await publicClient.readContract({
         address: contractAddress,
         abi: timelockAbi,
         functionName: 'getTimestamp',
         args: [id],
       });
-      return BigInt(result.data?.toString() || '0');
+      return BigInt(result?.toString() || '0');
     } catch (error) {
       console.error('Error getting timestamp:', error);
       return 0n;
     }
-  }, [contractAddress]);
+  }, [contractAddress, publicClient]);
 
   // Schedule a new operation
   const schedule = useCallback(async (params: ScheduleParams) => {
@@ -589,24 +602,24 @@ export function useTimelock(contractAddress?: Address) {
 
   // Check if user has specific role
   const hasRole = useCallback(async (role: Hash, accountAddress?: Address): Promise<boolean> => {
-    if (!contractAddress) return false;
+    if (!contractAddress || !publicClient) return false;
     
     const addressToCheck = accountAddress || account;
     if (!addressToCheck) return false;
 
     try {
-      const result = await useReadContract({
+      const result = await publicClient.readContract({
         address: contractAddress,
         abi: timelockAbi,
         functionName: 'hasRole',
         args: [role, addressToCheck],
       });
-      return result.data as boolean;
+      return result as boolean;
     } catch (error) {
       console.error('Error checking role:', error);
       return false;
     }
-  }, [contractAddress, account]);
+  }, [contractAddress, account, publicClient]);
 
   // Refresh all data
   const refresh = useCallback(async () => {
