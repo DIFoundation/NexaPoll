@@ -35,6 +35,17 @@ export interface CreateDAOParams {
   baseURI?: string;
 }
 
+export interface DAOCreatedEventArgs {
+  governor: Address;
+  timelock: Address;
+  treasury: Address;
+  daoName: string;
+  token: Address;
+  tokenType: TokenType;
+  creator: Address;
+  daoId: bigint;
+}
+
 export function useGovernorFactory(contractAddress?: Address) {
   const { address: account } = useAccount();
   const [isCreatingDAO, setIsCreatingDAO] = useState(false);
@@ -141,7 +152,7 @@ export function useGovernorFactory(contractAddress?: Address) {
             timelock, 
             treasury, 
             token 
-          } = latestLog.args;
+          } = latestLog.args as unknown as DAOCreatedEventArgs;
           
           // Only set if this is the current user's DAO
           if (creator === account) {

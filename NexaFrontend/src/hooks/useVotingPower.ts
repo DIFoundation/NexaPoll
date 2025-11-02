@@ -1,8 +1,16 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Address, Hash } from 'viem';
-import { erc20VotingPower } from '@/lib/abi/core/votingPower/erc20';
-import { erc721VotingPower } from '@/lib/abi/core/votingPower/erc721';
-import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent } from 'wagmi';
+import { useState, useCallback, useEffect } from "react";
+import { Address, Hash } from "viem";
+import { erc20VotingPower } from "@/lib/abi/core/votingPower/erc20";
+import { erc721VotingPower } from "@/lib/abi/core/votingPower/erc721";
+import {
+  useAccount,
+  useReadContract,
+  useWriteContract,
+  useWaitForTransactionReceipt,
+  useWatchContractEvent,
+  useConfig,
+} from "wagmi";
+import { readContract } from "wagmi/actions";
 
 export interface Checkpoint {
   fromBlock: bigint;
@@ -68,7 +76,10 @@ export interface SetApprovalForAllParams {
 
 export function useERC20VotingPower(contractAddress?: Address) {
   const { address: account } = useAccount();
-  const [delegateCache, setDelegateCache] = useState<Record<Address, Address>>({});
+  const [delegateCache, setDelegateCache] = useState<Record<Address, Address>>(
+    {}
+  );
+  const config = useConfig();
 
   // Token metadata
   const {
@@ -78,7 +89,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
-    functionName: 'name',
+    functionName: "name",
     query: {
       enabled: !!contractAddress,
     },
@@ -91,7 +102,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
-    functionName: 'symbol',
+    functionName: "symbol",
     query: {
       enabled: !!contractAddress,
     },
@@ -104,7 +115,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
-    functionName: 'decimals',
+    functionName: "decimals",
     query: {
       enabled: !!contractAddress,
     },
@@ -117,7 +128,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
-    functionName: 'totalSupply',
+    functionName: "totalSupply",
     query: {
       enabled: !!contractAddress,
     },
@@ -130,7 +141,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
-    functionName: 'maxSupply',
+    functionName: "maxSupply",
     query: {
       enabled: !!contractAddress,
     },
@@ -144,7 +155,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
-    functionName: 'balanceOf',
+    functionName: "balanceOf",
     args: account ? [account] : undefined,
     query: {
       enabled: !!contractAddress && !!account,
@@ -158,7 +169,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
-    functionName: 'getVotes',
+    functionName: "getVotes",
     args: account ? [account] : undefined,
     query: {
       enabled: !!contractAddress && !!account,
@@ -172,7 +183,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc20VotingPower,
-    functionName: 'delegates',
+    functionName: "delegates",
     args: account ? [account] : undefined,
     query: {
       enabled: !!contractAddress && !!account,
@@ -180,49 +191,52 @@ export function useERC20VotingPower(contractAddress?: Address) {
   });
 
   // Write operations
-  const { 
-    writeContractAsync: transferAsync, 
+  const {
+    writeContractAsync: transferAsync,
     data: transferTxHash,
     isPending: isTransferPending,
     error: transferError,
-    reset: resetTransfer
+    reset: resetTransfer,
   } = useWriteContract();
 
-  const { 
-    writeContractAsync: approveAsync, 
+  const {
+    writeContractAsync: approveAsync,
     data: approveTxHash,
     isPending: isApprovePending,
     error: approveError,
-    reset: resetApprove
+    reset: resetApprove,
   } = useWriteContract();
 
-  const { 
-    writeContractAsync: delegateAsync, 
+  const {
+    writeContractAsync: delegateAsync,
     data: delegateTxHash,
     isPending: isDelegatePending,
     error: delegateError,
-    reset: resetDelegate
+    reset: resetDelegate,
   } = useWriteContract();
 
-  const { 
-    writeContractAsync: delegateBySigAsync, 
+  const {
+    writeContractAsync: delegateBySigAsync,
     data: delegateBySigTxHash,
     isPending: isDelegateBySigPending,
-    error: delegateBySigError
+    error: delegateBySigError,
   } = useWriteContract();
 
   // Wait for transaction receipts
-  const { isLoading: isWaitingForTransfer, isSuccess: isTransferSuccess } = useWaitForTransactionReceipt({
-    hash: transferTxHash,
-  });
+  const { isLoading: isWaitingForTransfer, isSuccess: isTransferSuccess } =
+    useWaitForTransactionReceipt({
+      hash: transferTxHash,
+    });
 
-  const { isLoading: isWaitingForApprove, isSuccess: isApproveSuccess } = useWaitForTransactionReceipt({
-    hash: approveTxHash,
-  });
+  const { isLoading: isWaitingForApprove, isSuccess: isApproveSuccess } =
+    useWaitForTransactionReceipt({
+      hash: approveTxHash,
+    });
 
-  const { isLoading: isWaitingForDelegate, isSuccess: isDelegateSuccess } = useWaitForTransactionReceipt({
-    hash: delegateTxHash || delegateBySigTxHash,
-  });
+  const { isLoading: isWaitingForDelegate, isSuccess: isDelegateSuccess } =
+    useWaitForTransactionReceipt({
+      hash: delegateTxHash || delegateBySigTxHash,
+    });
 
   // Refresh data after successful transactions
   useEffect(() => {
@@ -244,13 +258,13 @@ export function useERC20VotingPower(contractAddress?: Address) {
   useWatchContractEvent({
     address: contractAddress,
     abi: erc20VotingPower,
-    eventName: 'Transfer',
+    eventName: "Transfer",
     onLogs(logs) {
-      logs.forEach(log => {
-        if ('args' in log && log.args) {
-          const { from, to } = log.args;
+      logs.forEach((log) => {
+        if ("args" in log && log.args) {
+          const { from, to, value } = log.args as { from: Address; to: Address; value: bigint };
           // Refresh balance if this account is involved
-          if (account && (from === account || to === account)) {
+          if (account && (from === account || to === account || value === value)) {
             refetchBalance();
             refetchVotes();
             refetchTotalSupply();
@@ -263,16 +277,20 @@ export function useERC20VotingPower(contractAddress?: Address) {
   useWatchContractEvent({
     address: contractAddress,
     abi: erc20VotingPower,
-    eventName: 'DelegateChanged',
+    eventName: "DelegateChanged",
     onLogs(logs) {
-      logs.forEach(log => {
-        if ('args' in log && log.args) {
-          const { delegator, fromDelegate, toDelegate } = log.args;
+      logs.forEach((log) => {
+        if ("args" in log && log.args) {
+          const { delegator, fromDelegate, toDelegate } = log.args as {
+            delegator: Address;
+            fromDelegate: Address;
+            toDelegate: Address;
+          };
           // Update cache
           if (delegator) {
-            setDelegateCache(prev => ({
+            setDelegateCache((prev) => ({
               ...prev,
-              [delegator as Address]: toDelegate as Address
+              [delegator]: toDelegate
             }));
           }
           // Refresh if this is the current account
@@ -288,11 +306,11 @@ export function useERC20VotingPower(contractAddress?: Address) {
   useWatchContractEvent({
     address: contractAddress,
     abi: erc20VotingPower,
-    eventName: 'DelegateVotesChanged',
+    eventName: "DelegateVotesChanged",
     onLogs(logs) {
-      logs.forEach(log => {
-        if ('args' in log && log.args) {
-          const { delegate } = log.args;
+      logs.forEach((log) => {
+        if ("args" in log && log.args) {
+          const { delegate } = log.args as { delegate: Address };
           // Refresh if this account's voting power changed
           if (account && delegate === account) {
             refetchVotes();
@@ -303,257 +321,292 @@ export function useERC20VotingPower(contractAddress?: Address) {
   });
 
   // Get voting power at a specific block
-  const getVotesAtBlock = useCallback(async (accountAddress: Address, blockNumber: bigint): Promise<bigint> => {
-    if (!contractAddress) return 0n;
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'getPastVotes',
-        args: [accountAddress, blockNumber],
-      });
-      return BigInt(result.data?.toString() || '0');
-    } catch (error) {
-      console.error('Error getting past votes:', error);
-      return 0n;
-    }
-  }, [contractAddress]);
+  const getVotesAtBlock = useCallback(
+    async (accountAddress: Address, blockNumber: bigint): Promise<bigint> => {
+      if (!contractAddress) return 0n;
 
-  // Get total supply at a specific block
-  const getPastTotalSupply = useCallback(async (blockNumber: bigint): Promise<bigint> => {
-    if (!contractAddress) return 0n;
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'getPastTotalSupply',
-        args: [blockNumber],
-      });
-      return BigInt(result.data?.toString() || '0');
-    } catch (error) {
-      console.error('Error getting past total supply:', error);
-      return 0n;
-    }
-  }, [contractAddress]);
-
-  // Get checkpoints for an account
-  const getCheckpoints = useCallback(async (
-    accountAddress: Address, 
-    start: number = 0, 
-    count: number = 10
-  ): Promise<Checkpoint[]> => {
-    if (!contractAddress) return [];
-    
-    try {
-      const checkpoints: Checkpoint[] = [];
-      
-      // Get total number of checkpoints
-      const numCheckpointsResult = await useReadContract({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'numCheckpoints',
-        args: [accountAddress],
-      });
-      
-      const totalCheckpoints = Number(numCheckpointsResult.data || 0);
-      
-      if (totalCheckpoints === 0) return [];
-      
-      const end = Math.min(start + count, totalCheckpoints);
-      
-      // Fetch each checkpoint
-      for (let i = start; i < end; i++) {
-        const checkpointResult = await useReadContract({
+      try {
+        const result = await readContract(config, {
           address: contractAddress,
           abi: erc20VotingPower,
-          functionName: 'checkpoints',
-          args: [accountAddress, i],
+          functionName: "getPastVotes",
+          args: [accountAddress, blockNumber],
         });
-        
-        if (checkpointResult.data) {
-          const data = checkpointResult.data as any;
-          checkpoints.push({
-            fromBlock: BigInt(data.fromBlock?.toString() || data[0]?.toString() || '0'),
-            votes: BigInt(data.votes?.toString() || data[1]?.toString() || '0'),
-          });
-        }
+        return BigInt(String(result) || "0");
+      } catch (error) {
+        console.error("Error getting past votes:", error);
+        return 0n;
       }
-      
-      return checkpoints;
-    } catch (error) {
-      console.error('Error getting checkpoints:', error);
-      return [];
-    }
-  }, [contractAddress]);
+    },
+    [contractAddress, config]
+  );
+
+  // Get total supply at a specific block
+  const getPastTotalSupply = useCallback(
+    async (blockNumber: bigint): Promise<bigint> => {
+      if (!contractAddress) return 0n;
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc20VotingPower,
+          functionName: "getPastTotalSupply",
+          args: [blockNumber],
+        });
+        return BigInt(String(result) || "0");
+      } catch (error) {
+        console.error("Error getting past total supply:", error);
+        return 0n;
+      }
+    },
+    [contractAddress, config]
+  );
+
+  // Get checkpoints for an account
+  const getCheckpoints = useCallback(
+    async (
+      accountAddress: Address,
+      start: number = 0,
+      count: number = 10
+    ): Promise<Checkpoint[]> => {
+      if (!contractAddress) return [];
+
+      try {
+        const checkpoints: Checkpoint[] = [];
+
+        // Get total number of checkpoints
+        const numCheckpointsResult = await readContract(config, {
+          address: contractAddress,
+          abi: erc20VotingPower,
+          functionName: "numCheckpoints",
+          args: [accountAddress],
+        });
+
+        const totalCheckpoints = Number(numCheckpointsResult || 0);
+
+        if (totalCheckpoints === 0) return [];
+
+        const end = Math.min(start + count, totalCheckpoints);
+
+        // Fetch each checkpoint
+        for (let i = start; i < end; i++) {
+          const checkpointResult = await readContract(config, {
+            address: contractAddress,
+            abi: erc20VotingPower,
+            functionName: "checkpoints",
+            args: [accountAddress, i],
+          });
+
+          if (checkpointResult) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data = checkpointResult as any;
+            checkpoints.push({
+              fromBlock: BigInt(
+                data.fromBlock?.toString() || data[0]?.toString() || "0"
+              ),
+              votes: BigInt(
+                data.votes?.toString() || data[1]?.toString() || "0"
+              ),
+            });
+          }
+        }
+
+        return checkpoints;
+      } catch (error) {
+        console.error("Error getting checkpoints:", error);
+        return [];
+      }
+    },
+    [contractAddress, config]
+  );
 
   // Transfer tokens
-  const transfer = useCallback(async (params: TransferParams) => {
-    if (!contractAddress) {
-      throw new Error('Contract address not provided');
-    }
+  const transfer = useCallback(
+    async (params: TransferParams) => {
+      if (!contractAddress) {
+        throw new Error("Contract address not provided");
+      }
 
-    const { to, amount } = params;
-    resetTransfer();
-    
-    try {
-      const hash = await transferAsync({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'transfer',
-        args: [to, amount],
-      });
-      return hash;
-    } catch (error) {
-      console.error('Error transferring tokens:', error);
-      throw error;
-    }
-  }, [contractAddress, transferAsync, resetTransfer]);
+      const { to, amount } = params;
+      resetTransfer();
+
+      try {
+        const hash = await transferAsync({
+          address: contractAddress,
+          abi: erc20VotingPower,
+          functionName: "transfer",
+          args: [to, amount],
+        });
+        return hash;
+      } catch (error) {
+        console.error("Error transferring tokens:", error);
+        throw error;
+      }
+    },
+    [contractAddress, transferAsync, resetTransfer]
+  );
 
   // Approve spender
-  const approve = useCallback(async (params: ApproveParams) => {
-    if (!contractAddress) {
-      throw new Error('Contract address not provided');
-    }
+  const approve = useCallback(
+    async (params: ApproveParams) => {
+      if (!contractAddress) {
+        throw new Error("Contract address not provided");
+      }
 
-    const { spender, amount } = params;
-    resetApprove();
-    
-    try {
-      const hash = await approveAsync({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'approve',
-        args: [spender, amount],
-      });
-      return hash;
-    } catch (error) {
-      console.error('Error approving spender:', error);
-      throw error;
-    }
-  }, [contractAddress, approveAsync, resetApprove]);
+      const { spender, amount } = params;
+      resetApprove();
+
+      try {
+        const hash = await approveAsync({
+          address: contractAddress,
+          abi: erc20VotingPower,
+          functionName: "approve",
+          args: [spender, amount],
+        });
+        return hash;
+      } catch (error) {
+        console.error("Error approving spender:", error);
+        throw error;
+      }
+    },
+    [contractAddress, approveAsync, resetApprove]
+  );
 
   // Delegate voting power
-  const delegate = useCallback(async (delegatee: Address) => {
-    if (!contractAddress) {
-      throw new Error('Contract address not provided');
-    }
-
-    resetDelegate();
-    
-    try {
-      const hash = await delegateAsync({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'delegate',
-        args: [delegatee],
-      });
-      
-      // Update cache
-      if (account) {
-        setDelegateCache(prev => ({
-          ...prev,
-          [account]: delegatee
-        }));
+  const delegate = useCallback(
+    async (delegatee: Address) => {
+      if (!contractAddress) {
+        throw new Error("Contract address not provided");
       }
-      
-      return hash;
-    } catch (error) {
-      console.error('Error delegating votes:', error);
-      throw error;
-    }
-  }, [contractAddress, delegateAsync, account, resetDelegate]);
+
+      resetDelegate();
+
+      try {
+        const hash = await delegateAsync({
+          address: contractAddress,
+          abi: erc20VotingPower,
+          functionName: "delegate",
+          args: [delegatee],
+        });
+
+        // Update cache
+        if (account) {
+          setDelegateCache((prev) => ({
+            ...prev,
+            [account]: delegatee,
+          }));
+        }
+
+        return hash;
+      } catch (error) {
+        console.error("Error delegating votes:", error);
+        throw error;
+      }
+    },
+    [contractAddress, delegateAsync, account, resetDelegate]
+  );
 
   // Delegate votes by signature
-  const delegateBySig = useCallback(async (params: DelegateBySigParams) => {
-    if (!contractAddress) {
-      throw new Error('Contract address not provided');
-    }
+  const delegateBySig = useCallback(
+    async (params: DelegateBySigParams) => {
+      if (!contractAddress) {
+        throw new Error("Contract address not provided");
+      }
 
-    const { delegatee, nonce, expiry, v, r, s } = params;
-    
-    try {
-      const hash = await delegateBySigAsync({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'delegateBySig',
-        args: [delegatee, nonce, expiry, v, r, s],
-      });
-      return hash;
-    } catch (error) {
-      console.error('Error delegating votes by signature:', error);
-      throw error;
-    }
-  }, [contractAddress, delegateBySigAsync]);
+      const { delegatee, nonce, expiry, v, r, s } = params;
+
+      try {
+        const hash = await delegateBySigAsync({
+          address: contractAddress,
+          abi: erc20VotingPower,
+          functionName: "delegateBySig",
+          args: [delegatee, nonce, expiry, v, r, s],
+        });
+        return hash;
+      } catch (error) {
+        console.error("Error delegating votes by signature:", error);
+        throw error;
+      }
+    },
+    [contractAddress, delegateBySigAsync]
+  );
 
   // Get current delegate for an account
-  const getDelegate = useCallback(async (accountAddress: Address): Promise<Address> => {
-    if (!contractAddress) return '0x0000000000000000000000000000000000000000';
-    
-    // Check cache first
-    if (delegateCache[accountAddress]) {
-      return delegateCache[accountAddress];
-    }
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'delegates',
-        args: [accountAddress],
-      });
-      
-      const delegate = result.data as Address;
-      
-      // Update cache
-      setDelegateCache(prev => ({
-        ...prev,
-        [accountAddress]: delegate
-      }));
-      
-      return delegate;
-    } catch (error) {
-      console.error('Error getting delegate:', error);
-      return '0x0000000000000000000000000000000000000000';
-    }
-  }, [contractAddress, delegateCache]);
+  const getDelegate = useCallback(
+    async (accountAddress: Address): Promise<Address> => {
+      if (!contractAddress) return "0x0000000000000000000000000000000000000000";
+
+      // Check cache first
+      if (delegateCache[accountAddress]) {
+        return delegateCache[accountAddress];
+      }
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc20VotingPower,
+          functionName: "delegates",
+          args: [accountAddress],
+        });
+
+        const delegate = result as Address;
+
+        // Update cache
+        setDelegateCache((prev) => ({
+          ...prev,
+          [accountAddress]: delegate,
+        }));
+
+        return delegate;
+      } catch (error) {
+        console.error("Error getting delegate:", error);
+        return "0x0000000000000000000000000000000000000000";
+      }
+    },
+    [contractAddress, delegateCache, config]
+  );
 
   // Get allowance for a spender
-  const getAllowance = useCallback(async (owner: Address, spender: Address): Promise<bigint> => {
-    if (!contractAddress) return 0n;
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'allowance',
-        args: [owner, spender],
-      });
-      return BigInt(result.data?.toString() || '0');
-    } catch (error) {
-      console.error('Error getting allowance:', error);
-      return 0n;
-    }
-  }, [contractAddress]);
+  const getAllowance = useCallback(
+    async (owner: Address, spender: Address): Promise<bigint> => {
+      if (!contractAddress) return 0n;
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc20VotingPower,
+          functionName: "allowance",
+          args: [owner, spender],
+        });
+        return BigInt(result as string || "0");
+      } catch (error) {
+        console.error("Error getting allowance:", error);
+        return 0n;
+      }
+    },
+    [contractAddress, config]
+  );
 
   // Get nonce for delegateBySig
-  const getNonce = useCallback(async (accountAddress: Address): Promise<bigint> => {
-    if (!contractAddress) return 0n;
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc20VotingPower,
-        functionName: 'nonces',
-        args: [accountAddress],
-      });
-      return BigInt(result.data?.toString() || '0');
-    } catch (error) {
-      console.error('Error getting nonce:', error);
-      return 0n;
-    }
-  }, [contractAddress]);
+  const getNonce = useCallback(
+    async (accountAddress: Address): Promise<bigint> => {
+      if (!contractAddress) return 0n;
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc20VotingPower,
+          functionName: "nonces",
+          args: [accountAddress],
+        });
+        return BigInt(result as string || "0");
+      } catch (error) {
+        console.error("Error getting nonce:", error);
+        return 0n;
+      }
+    },
+    [contractAddress, config]
+  );
 
   // Refresh all data
   const refresh = useCallback(async () => {
@@ -566,11 +619,7 @@ export function useERC20VotingPower(contractAddress?: Address) {
     ];
 
     if (account) {
-      promises.push(
-        refetchBalance(),
-        refetchVotes(),
-        refetchCurrentDelegate()
-      );
+      promises.push(refetchBalance(), refetchVotes(), refetchCurrentDelegate());
     }
 
     await Promise.all(promises);
@@ -593,27 +642,33 @@ export function useERC20VotingPower(contractAddress?: Address) {
     decimals: tokenDecimals ? Number(tokenDecimals) : 18,
     totalSupply: tokenTotalSupply ? BigInt(tokenTotalSupply.toString()) : 0n,
     maxSupply: tokenMaxSupply ? BigInt(tokenMaxSupply.toString()) : 0n,
-    
+
     // Account data
     balance: accountBalance ? BigInt(accountBalance.toString()) : 0n,
     votingPower: currentVotes ? BigInt(currentVotes.toString()) : 0n,
     currentDelegate: currentDelegate as Address | undefined,
     delegateCache,
-    
+
     // Loading states
-    isLoading: isLoadingName || isLoadingSymbol || isLoadingDecimals || 
-               isLoadingTotalSupply || isLoadingMaxSupply,
+    isLoading:
+      isLoadingName ||
+      isLoadingSymbol ||
+      isLoadingDecimals ||
+      isLoadingTotalSupply ||
+      isLoadingMaxSupply,
     isLoadingBalance: isLoadingBalance,
     isLoadingVotingPower: isLoadingVotes,
     isLoadingDelegate: isLoadingDelegate,
     isTransferring: isTransferPending || isWaitingForTransfer,
     isApproving: isApprovePending || isWaitingForApprove,
-    isDelegating: isDelegatePending || isDelegateBySigPending || isWaitingForDelegate,
-    
+    isDelegating:
+      isDelegatePending || isDelegateBySigPending || isWaitingForDelegate,
+
     // Errors
     transferError: transferError?.message || null,
     approveError: approveError?.message || null,
-    delegateError: delegateError?.message || delegateBySigError?.message || null,
+    delegateError:
+      delegateError?.message || delegateBySigError?.message || null,
 
     // Actions
     transfer,
@@ -731,6 +786,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
   const { address: account } = useAccount();
   const [ownedNFTs, setOwnedNFTs] = useState<NFT[]>([]);
   const [isFetchingNFTs, setIsFetchingNFTs] = useState(false);
+  const config = useConfig();
 
   // Token metadata
   const {
@@ -740,7 +796,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
-    functionName: 'name',
+    functionName: "name",
     query: {
       enabled: !!contractAddress,
     },
@@ -753,7 +809,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
-    functionName: 'symbol',
+    functionName: "symbol",
     query: {
       enabled: !!contractAddress,
     },
@@ -766,7 +822,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
-    functionName: 'totalSupply',
+    functionName: "totalSupply",
     query: {
       enabled: !!contractAddress,
     },
@@ -779,7 +835,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
-    functionName: 'maxSupply',
+    functionName: "maxSupply",
     query: {
       enabled: !!contractAddress,
     },
@@ -793,7 +849,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
-    functionName: 'balanceOf',
+    functionName: "balanceOf",
     args: account ? [account] : undefined,
     query: {
       enabled: !!contractAddress && !!account,
@@ -807,7 +863,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
-    functionName: 'getVotes',
+    functionName: "getVotes",
     args: account ? [account] : undefined,
     query: {
       enabled: !!contractAddress && !!account,
@@ -821,7 +877,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
   } = useReadContract({
     address: contractAddress,
     abi: erc721VotingPower,
-    functionName: 'delegates',
+    functionName: "delegates",
     args: account ? [account] : undefined,
     query: {
       enabled: !!contractAddress && !!account,
@@ -829,217 +885,149 @@ export function useERC721VotingPower(contractAddress?: Address) {
   });
 
   // Write operations
-  const { 
-    writeContractAsync: transferAsync, 
+  const {
+    writeContractAsync: transferAsync,
     data: transferTxHash,
     isPending: isTransferPending,
     error: transferError,
-    reset: resetTransfer
+    reset: resetTransfer,
   } = useWriteContract();
 
-  const { 
-    writeContractAsync: approveAsync, 
+  const {
+    writeContractAsync: approveAsync,
     data: approveTxHash,
     isPending: isApprovePending,
     error: approveError,
-    reset: resetApprove
+    reset: resetApprove,
   } = useWriteContract();
 
-  const { 
-    writeContractAsync: setApprovalForAllAsync, 
+  const {
+    writeContractAsync: setApprovalForAllAsync,
     data: approvalForAllTxHash,
     isPending: isApprovalForAllPending,
     error: approvalForAllError,
-    reset: resetApprovalForAll
+    reset: resetApprovalForAll,
   } = useWriteContract();
 
-  const { 
-    writeContractAsync: delegateAsync, 
+  const {
+    writeContractAsync: delegateAsync,
     data: delegateTxHash,
     isPending: isDelegatePending,
     error: delegateError,
-    reset: resetDelegate
+    reset: resetDelegate,
   } = useWriteContract();
 
-  const { 
-    writeContractAsync: mintAsync, 
+  const {
+    writeContractAsync: mintAsync,
     data: mintTxHash,
     isPending: isMintPending,
-    error: mintError
+    error: mintError,
   } = useWriteContract();
 
   // Wait for transaction receipts
-  const { isLoading: isWaitingForTransfer, isSuccess: isTransferSuccess } = useWaitForTransactionReceipt({
-    hash: transferTxHash,
-  });
+  const { isLoading: isWaitingForTransfer, isSuccess: isTransferSuccess } =
+    useWaitForTransactionReceipt({
+      hash: transferTxHash,
+    });
 
   const { isLoading: isWaitingForApprove } = useWaitForTransactionReceipt({
     hash: approveTxHash,
   });
 
-  const { isLoading: isWaitingForApprovalForAll } = useWaitForTransactionReceipt({
-    hash: approvalForAllTxHash,
-  });
+  const { isLoading: isWaitingForApprovalForAll } =
+    useWaitForTransactionReceipt({
+      hash: approvalForAllTxHash,
+    });
 
-  const { isLoading: isWaitingForDelegate, isSuccess: isDelegateSuccess } = useWaitForTransactionReceipt({
-    hash: delegateTxHash,
-  });
+  const { isLoading: isWaitingForDelegate, isSuccess: isDelegateSuccess } =
+    useWaitForTransactionReceipt({
+      hash: delegateTxHash,
+    });
 
-  const { 
-    isLoading: isWaitingForMint, 
+  const {
+    isLoading: isWaitingForMint,
     isSuccess: isMintSuccess,
-    data: mintReceipt 
+    data: mintReceipt,
   } = useWaitForTransactionReceipt({
     hash: mintTxHash,
   });
 
-  // Refresh data after successful transactions
-  useEffect(() => {
-    if (isTransferSuccess) {
-      refetchBalance();
-      refetchTotalSupply();
-      refetchVotes();
-      fetchOwnedNFTs();
-    }
-  }, [isTransferSuccess, refetchBalance, refetchTotalSupply, refetchVotes]);
-
-  useEffect(() => {
-    if (isDelegateSuccess) {
-      refetchVotes();
-      refetchDelegate();
-    }
-  }, [isDelegateSuccess, refetchVotes, refetchDelegate]);
-
-  useEffect(() => {
-    if (isMintSuccess) {
-      refetchBalance();
-      refetchTotalSupply();
-      fetchOwnedNFTs();
-    }
-  }, [isMintSuccess, refetchBalance, refetchTotalSupply]);
-
-  // Event listeners
-  useWatchContractEvent({
-    address: contractAddress,
-    abi: erc721VotingPower,
-    eventName: 'Transfer',
-    onLogs(logs) {
-      logs.forEach(log => {
-        if ('args' in log && log.args) {
-          const { from, to } = log.args;
-          // Refresh if this account is involved
-          if (account && (from === account || to === account)) {
-            refetchBalance();
-            refetchVotes();
-            refetchTotalSupply();
-            fetchOwnedNFTs();
-          }
-        }
-      });
-    },
-  });
-
-  useWatchContractEvent({
-    address: contractAddress,
-    abi: erc721VotingPower,
-    eventName: 'DelegateChanged',
-    onLogs(logs) {
-      logs.forEach(log => {
-        if ('args' in log && log.args) {
-          const { delegator } = log.args;
-          if (account && delegator === account) {
-            refetchVotes();
-            refetchDelegate();
-          }
-        }
-      });
-    },
-  });
-
-  useWatchContractEvent({
-    address: contractAddress,
-    abi: erc721VotingPower,
-    eventName: 'DelegateVotesChanged',
-    onLogs(logs) {
-      logs.forEach(log => {
-        if ('args' in log && log.args) {
-          const { delegate } = log.args;
-          if (account && delegate === account) {
-            refetchVotes();
-          }
-        }
-      });
-    },
-  });
-
   // Fetch NFT metadata from tokenURI
-  const fetchNFTMetadata = useCallback(async (tokenURI: string): Promise<NFTMetadata | undefined> => {
-    try {
-      // Handle IPFS URLs
-      let url = tokenURI;
-      if (tokenURI.startsWith('ipfs://')) {
-        url = tokenURI.replace('ipfs://', 'https://ipfs.io/ipfs/');
+  const fetchNFTMetadata = useCallback(
+    async (tokenURI: string): Promise<NFTMetadata | undefined> => {
+      try {
+        // Handle IPFS URLs
+        let url = tokenURI;
+        if (tokenURI.startsWith("ipfs://")) {
+          url = tokenURI.replace("ipfs://", "https://ipfs.io/ipfs/");
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) return undefined;
+
+        const metadata = await response.json();
+        return metadata as NFTMetadata;
+      } catch (error) {
+        console.error("Error fetching NFT metadata:", error);
+        return undefined;
       }
-
-      const response = await fetch(url);
-      if (!response.ok) return undefined;
-
-      const metadata = await response.json();
-      return metadata as NFTMetadata;
-    } catch (error) {
-      console.error('Error fetching NFT metadata:', error);
-      return undefined;
-    }
-  }, []);
+    },
+    []
+  );
 
   // Fetch single NFT details
-  const fetchNFT = useCallback(async (tokenId: bigint): Promise<NFT | null> => {
-    if (!contractAddress) return null;
-    
-    try {
-      const [ownerResult, tokenURIResult, approvedResult] = await Promise.all([
-        useReadContract({
-          address: contractAddress,
-          abi: erc721VotingPower,
-          functionName: 'ownerOf',
-          args: [tokenId],
-        }),
-        useReadContract({
-          address: contractAddress,
-          abi: erc721VotingPower,
-          functionName: 'tokenURI',
-          args: [tokenId],
-        }),
-        useReadContract({
-          address: contractAddress,
-          abi: erc721VotingPower,
-          functionName: 'getApproved',
-          args: [tokenId],
-        }),
-      ]);
+  const fetchNFT = useCallback(
+    async (tokenId: bigint): Promise<NFT | null> => {
+      if (!contractAddress) return null;
 
-      const owner = ownerResult.data as Address;
-      const tokenURI = tokenURIResult.data as string;
-      const approved = approvedResult.data as Address;
+      try {
+        const [ownerResult, tokenURIResult, approvedResult] = await Promise.all(
+          [
+            readContract(config, {
+              address: contractAddress,
+              abi: erc721VotingPower,
+              functionName: "ownerOf",
+              args: [tokenId],
+            }),
+            readContract(config, {
+              address: contractAddress,
+              abi: erc721VotingPower,
+              functionName: "tokenURI",
+              args: [tokenId],
+            }),
+            readContract(config, {
+              address: contractAddress,
+              abi: erc721VotingPower,
+              functionName: "getApproved",
+              args: [tokenId],
+            }),
+          ]
+        );
 
-      // Optionally fetch metadata
-      let metadata: NFTMetadata | undefined;
-      if (tokenURI) {
-        metadata = await fetchNFTMetadata(tokenURI);
+        const owner = ownerResult as Address;
+        const tokenURI = tokenURIResult as string;
+        const approved = approvedResult as Address;
+
+        // Optionally fetch metadata
+        let metadata: NFTMetadata | undefined;
+        if (tokenURI) {
+          metadata = await fetchNFTMetadata(tokenURI);
+        }
+
+        return {
+          tokenId,
+          owner,
+          tokenURI,
+          approved,
+          metadata,
+        };
+      } catch (error) {
+        console.error("Error fetching NFT:", error);
+        return null;
       }
-
-      return {
-        tokenId,
-        owner,
-        tokenURI,
-        approved,
-        metadata,
-      };
-    } catch (error) {
-      console.error('Error fetching NFT:', error);
-      return null;
-    }
-  }, [contractAddress, fetchNFTMetadata]);
+    },
+    [contractAddress, fetchNFTMetadata, config]
+  );
 
   // Fetch all owned NFTs
   const fetchOwnedNFTs = useCallback(async () => {
@@ -1064,10 +1052,10 @@ export function useERC721VotingPower(contractAddress?: Address) {
           const index = i + j;
           if (index < balance) {
             promises.push(
-              useReadContract({
+              readContract(config, {
                 address: contractAddress,
                 abi: erc721VotingPower,
-                functionName: 'tokenOfOwnerByIndex',
+                functionName: "tokenOfOwnerByIndex",
                 args: [account, BigInt(index)],
               })
             );
@@ -1075,11 +1063,11 @@ export function useERC721VotingPower(contractAddress?: Address) {
         }
 
         const results = await Promise.all(promises);
-        
+
         // Fetch NFT details for each token ID
         const nftPromises = results
-          .filter(result => result.data)
-          .map(result => fetchNFT(BigInt(result.data!.toString())));
+          .filter((result) => result)
+          .map((result) => fetchNFT(BigInt(result as string)));
 
         const batchNFTs = await Promise.all(nftPromises);
         nfts.push(...batchNFTs.filter((nft): nft is NFT => nft !== null));
@@ -1087,12 +1075,104 @@ export function useERC721VotingPower(contractAddress?: Address) {
 
       setOwnedNFTs(nfts);
     } catch (error) {
-      console.error('Error fetching owned NFTs:', error);
+      console.error("Error fetching owned NFTs:", error);
       setOwnedNFTs([]);
     } finally {
       setIsFetchingNFTs(false);
     }
-  }, [contractAddress, account, accountBalance, fetchNFT]);
+  }, [contractAddress, account, accountBalance, fetchNFT, config]);
+
+  // Refresh data after successful transactions
+  useEffect(() => {
+    if (isTransferSuccess) {
+      refetchBalance();
+      refetchTotalSupply();
+      refetchVotes();
+      fetchOwnedNFTs();
+    }
+  }, [
+    isTransferSuccess,
+    refetchBalance,
+    refetchTotalSupply,
+    refetchVotes,
+    fetchOwnedNFTs,
+  ]);
+
+  useEffect(() => {
+    if (isDelegateSuccess) {
+      refetchVotes();
+      refetchDelegate();
+    }
+  }, [isDelegateSuccess, refetchVotes, refetchDelegate]);
+
+  useEffect(() => {
+    if (isMintSuccess) {
+      refetchBalance();
+      refetchTotalSupply();
+      fetchOwnedNFTs();
+    }
+  }, [isMintSuccess, refetchBalance, refetchTotalSupply, fetchOwnedNFTs]);
+
+  // Event listeners
+  useWatchContractEvent({
+    address: contractAddress,
+    abi: erc721VotingPower,
+    eventName: "Transfer",
+    onLogs(logs) {
+      logs.forEach((log) => {
+        if ("args" in log && log.args) {
+          const { from, to } = log.args as { 
+            from: Address; 
+            to: Address 
+          };
+          // Refresh if this account is involved
+          if (account && (from === account || to === account)) {
+            refetchBalance();
+            refetchVotes();
+            refetchTotalSupply();
+            fetchOwnedNFTs();
+          }
+        }
+      });
+    },
+  });
+
+  useWatchContractEvent({
+    address: contractAddress,
+    abi: erc721VotingPower,
+    eventName: "DelegateChanged",
+    onLogs(logs) {
+      logs.forEach((log) => {
+        if ("args" in log && log.args) {
+          const { delegator } = log.args as { 
+            delegator: Address 
+          };
+          if (account && delegator === account) {
+            refetchVotes();
+            refetchDelegate();
+          }
+        }
+      });
+    },
+  });
+
+  useWatchContractEvent({
+    address: contractAddress,
+    abi: erc721VotingPower,
+    eventName: "DelegateVotesChanged",
+    onLogs(logs) {
+      logs.forEach((log) => {
+        if ("args" in log && log.args) {
+          const { delegate } = log.args as { 
+            delegate: Address 
+          };
+          if (account && delegate === account) {
+            refetchVotes();
+          }
+        }
+      });
+    },
+  });
 
   // Auto-fetch NFTs when balance changes
   useEffect(() => {
@@ -1101,228 +1181,261 @@ export function useERC721VotingPower(contractAddress?: Address) {
     } else {
       setOwnedNFTs([]);
     }
-  }, [accountBalance]);
+  }, [accountBalance, fetchOwnedNFTs]);
 
   // Get voting power at a specific block
-  const getVotesAtBlock = useCallback(async (accountAddress: Address, blockNumber: bigint): Promise<bigint> => {
-    if (!contractAddress) return 0n;
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'getPastVotes',
-        args: [accountAddress, blockNumber],
-      });
-      return BigInt(result.data?.toString() || '0');
-    } catch (error) {
-      console.error('Error getting past votes:', error);
-      return 0n;
-    }
-  }, [contractAddress]);
+  const getVotesAtBlock = useCallback(
+    async (accountAddress: Address, blockNumber: bigint): Promise<bigint> => {
+      if (!contractAddress) return 0n;
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "getPastVotes",
+          args: [accountAddress, blockNumber],
+        });
+        return BigInt((result as string) || "0");
+      } catch (error) {
+        console.error("Error getting past votes:", error);
+        return 0n;
+      }
+    },
+    [contractAddress, config]
+  );
 
   // Get past total supply
-  const getPastTotalSupply = useCallback(async (blockNumber: bigint): Promise<bigint> => {
-    if (!contractAddress) return 0n;
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'getPastTotalSupply',
-        args: [blockNumber],
-      });
-      return BigInt(result.data?.toString() || '0');
-    } catch (error) {
-      console.error('Error getting past total supply:', error);
-      return 0n;
-    }
-  }, [contractAddress]);
+  const getPastTotalSupply = useCallback(
+    async (blockNumber: bigint): Promise<bigint> => {
+      if (!contractAddress) return 0n;
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "getPastTotalSupply",
+          args: [blockNumber],
+        });
+        return BigInt((result as string) || "0");
+      } catch (error) {
+        console.error("Error getting past total supply:", error);
+        return 0n;
+      }
+    },
+    [contractAddress, config]
+  );
 
   // Transfer NFT
-  const transfer = useCallback(async (params: TransferNFTParams) => {
-    if (!contractAddress) {
-      throw new Error('Contract address not provided');
-    }
+  const transfer = useCallback(
+    async (params: TransferNFTParams) => {
+      if (!contractAddress) {
+        throw new Error("Contract address not provided");
+      }
 
-    const { from, to, tokenId } = params;
-    resetTransfer();
+      const { from, to, tokenId } = params;
+      resetTransfer();
 
-    try {
-      const hash = await transferAsync({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'safeTransferFrom',
-        args: [from, to, tokenId],
-      });
-      return hash;
-    } catch (error) {
-      console.error('Error transferring NFT:', error);
-      throw error;
-    }
-  }, [contractAddress, transferAsync, resetTransfer]);
+      try {
+        const hash = await transferAsync({
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "safeTransferFrom",
+          args: [from, to, tokenId],
+        });
+        return hash;
+      } catch (error) {
+        console.error("Error transferring NFT:", error);
+        throw error;
+      }
+    },
+    [contractAddress, transferAsync, resetTransfer]
+  );
 
   // Approve address to manage NFT
-  const approve = useCallback(async (params: ApproveParams) => {
-    if (!contractAddress) {
-      throw new Error('Contract address not provided');
-    }
+  const approve = useCallback(
+    async (params: ApproveParams) => {
+      if (!contractAddress) {
+        throw new Error("Contract address not provided");
+      }
 
-    const { to, tokenId } = params;
-    resetApprove();
+      const { to, tokenId } = params;
+      resetApprove();
 
-    try {
-      const hash = await approveAsync({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'approve',
-        args: [to, tokenId],
-      });
-      return hash;
-    } catch (error) {
-      console.error('Error approving address:', error);
-      throw error;
-    }
-  }, [contractAddress, approveAsync, resetApprove]);
+      try {
+        const hash = await approveAsync({
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "approve",
+          args: [to, tokenId],
+        });
+        return hash;
+      } catch (error) {
+        console.error("Error approving address:", error);
+        throw error;
+      }
+    },
+    [contractAddress, approveAsync, resetApprove]
+  );
 
   // Set approval for all tokens
-  const setApprovalForAll = useCallback(async (params: SetApprovalForAllParams) => {
-    if (!contractAddress) {
-      throw new Error('Contract address not provided');
-    }
+  const setApprovalForAll = useCallback(
+    async (params: SetApprovalForAllParams) => {
+      if (!contractAddress) {
+        throw new Error("Contract address not provided");
+      }
 
-    const { operator, approved } = params;
-    resetApprovalForAll();
+      const { operator, approved } = params;
+      resetApprovalForAll();
 
-    try {
-      const hash = await setApprovalForAllAsync({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'setApprovalForAll',
-        args: [operator, approved],
-      });
-      return hash;
-    } catch (error) {
-      console.error('Error setting operator approval:', error);
-      throw error;
-    }
-  }, [contractAddress, setApprovalForAllAsync, resetApprovalForAll]);
+      try {
+        const hash = await setApprovalForAllAsync({
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "setApprovalForAll",
+          args: [operator, approved],
+        });
+        return hash;
+      } catch (error) {
+        console.error("Error setting operator approval:", error);
+        throw error;
+      }
+    },
+    [contractAddress, setApprovalForAllAsync, resetApprovalForAll]
+  );
 
   // Delegate voting power
-  const delegate = useCallback(async (delegatee: Address) => {
-    if (!contractAddress) {
-      throw new Error('Contract address not provided');
-    }
+  const delegate = useCallback(
+    async (delegatee: Address) => {
+      if (!contractAddress) {
+        throw new Error("Contract address not provided");
+      }
 
-    resetDelegate();
+      resetDelegate();
 
-    try {
-      const hash = await delegateAsync({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'delegate',
-        args: [delegatee],
-      });
-      
-      return hash;
-    } catch (error) {
-      console.error('Error delegating votes:', error);
-      throw error;
-    }
-  }, [contractAddress, delegateAsync, resetDelegate]);
+      try {
+        const hash = await delegateAsync({
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "delegate",
+          args: [delegatee],
+        });
+
+        return hash;
+      } catch (error) {
+        console.error("Error delegating votes:", error);
+        throw error;
+      }
+    },
+    [contractAddress, delegateAsync, resetDelegate]
+  );
 
   // Mint new NFT
-  const mint = useCallback(async (to: Address) => {
-    if (!contractAddress) {
-      throw new Error('Contract address not provided');
-    }
+  const mint = useCallback(
+    async (to: Address) => {
+      if (!contractAddress) {
+        throw new Error("Contract address not provided");
+      }
 
-    try {
-      const hash = await mintAsync({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'mint',
-        args: [to],
-      });
-      
-      return hash;
-    } catch (error) {
-      console.error('Error minting NFT:', error);
-      throw error;
-    }
-  }, [contractAddress, mintAsync]);
+      try {
+        const hash = await mintAsync({
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "mint",
+          args: [to],
+        });
+
+        return hash;
+      } catch (error) {
+        console.error("Error minting NFT:", error);
+        throw error;
+      }
+    },
+    [contractAddress, mintAsync]
+  );
 
   // Get token URI
-  const getTokenURI = useCallback(async (tokenId: bigint): Promise<string> => {
-    if (!contractAddress) return '';
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'tokenURI',
-        args: [tokenId],
-      });
-      return result.data as string || '';
-    } catch (error) {
-      console.error('Error getting token URI:', error);
-      return '';
-    }
-  }, [contractAddress]);
+  const getTokenURI = useCallback(
+    async (tokenId: bigint): Promise<string> => {
+      if (!contractAddress) return "";
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "tokenURI",
+          args: [tokenId],
+        });
+        return (result as string) || "";
+      } catch (error) {
+        console.error("Error getting token URI:", error);
+        return "";
+      }
+    },
+    [contractAddress, config]
+  );
 
   // Get owner of token
-  const getOwnerOf = useCallback(async (tokenId: bigint): Promise<Address | null> => {
-    if (!contractAddress) return null;
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'ownerOf',
-        args: [tokenId],
-      });
-      return result.data as Address;
-    } catch (error) {
-      console.error('Error getting owner:', error);
-      return null;
-    }
-  }, [contractAddress]);
+  const getOwnerOf = useCallback(
+    async (tokenId: bigint): Promise<Address | null> => {
+      if (!contractAddress) return null;
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "ownerOf",
+          args: [tokenId],
+        });
+        return result as Address;
+      } catch (error) {
+        console.error("Error getting owner:", error);
+        return null;
+      }
+    },
+    [contractAddress, config]
+  );
 
   // Check if operator is approved for all
-  const isApprovedForAll = useCallback(async (owner: Address, operator: Address): Promise<boolean> => {
-    if (!contractAddress) return false;
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'isApprovedForAll',
-        args: [owner, operator],
-      });
-      return result.data as boolean;
-    } catch (error) {
-      console.error('Error checking approval for all:', error);
-      return false;
-    }
-  }, [contractAddress]);
+  const isApprovedForAll = useCallback(
+    async (owner: Address, operator: Address): Promise<boolean> => {
+      if (!contractAddress) return false;
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "isApprovedForAll",
+          args: [owner, operator],
+        });
+        return result as boolean;
+      } catch (error) {
+        console.error("Error checking approval for all:", error);
+        return false;
+      }
+    },
+    [contractAddress, config]
+  );
 
   // Get approved address for token
-  const getApproved = useCallback(async (tokenId: bigint): Promise<Address | null> => {
-    if (!contractAddress) return null;
-    
-    try {
-      const result = await useReadContract({
-        address: contractAddress,
-        abi: erc721VotingPower,
-        functionName: 'getApproved',
-        args: [tokenId],
-      });
-      return result.data as Address;
-    } catch (error) {
-      console.error('Error getting approved address:', error);
-      return null;
-    }
-  }, [contractAddress]);
+  const getApproved = useCallback(
+    async (tokenId: bigint): Promise<Address | null> => {
+      if (!contractAddress) return null;
+
+      try {
+        const result = await readContract(config, {
+          address: contractAddress,
+          abi: erc721VotingPower,
+          functionName: "getApproved",
+          args: [tokenId],
+        });
+        return result as Address;
+      } catch (error) {
+        console.error("Error getting approved address:", error);
+        return null;
+      }
+    },
+    [contractAddress, config]
+  );
 
   // Refresh all data
   const refresh = useCallback(async () => {
@@ -1334,15 +1447,11 @@ export function useERC721VotingPower(contractAddress?: Address) {
     ];
 
     if (account) {
-      promises.push(
-        refetchBalance(),
-        refetchVotes(),
-        refetchDelegate()
-      );
+      promises.push(refetchBalance(), refetchVotes(), refetchDelegate());
     }
 
     await Promise.all(promises);
-    
+
     // Fetch NFTs after balance is updated
     if (account && accountBalance) {
       await fetchOwnedNFTs();
@@ -1366,25 +1475,30 @@ export function useERC721VotingPower(contractAddress?: Address) {
     symbol: tokenSymbol as string | undefined,
     totalSupply: tokenTotalSupply ? BigInt(tokenTotalSupply.toString()) : 0n,
     maxSupply: tokenMaxSupply ? BigInt(tokenMaxSupply.toString()) : 0n,
-    
+
     // Account data
     balance: accountBalance ? BigInt(accountBalance.toString()) : 0n,
     votingPower: currentVotes ? BigInt(currentVotes.toString()) : 0n,
     currentDelegate: currentDelegate as Address | undefined,
     ownedNFTs,
-    
+
     // Loading states
-    isLoading: isLoadingName || isLoadingSymbol || isLoadingTotalSupply || isLoadingMaxSupply,
+    isLoading:
+      isLoadingName ||
+      isLoadingSymbol ||
+      isLoadingTotalSupply ||
+      isLoadingMaxSupply,
     isLoadingBalance: isLoadingBalance,
     isLoadingVotingPower: isLoadingVotes,
     isLoadingDelegate: isLoadingDelegate,
     isFetchingNFTs,
     isTransferring: isTransferPending || isWaitingForTransfer,
     isApproving: isApprovePending || isWaitingForApprove,
-    isSettingApprovalForAll: isApprovalForAllPending || isWaitingForApprovalForAll,
+    isSettingApprovalForAll:
+      isApprovalForAllPending || isWaitingForApprovalForAll,
     isDelegating: isDelegatePending || isWaitingForDelegate,
     isMinting: isMintPending || isWaitingForMint,
-    
+
     // Errors
     transferError: transferError?.message || null,
     approveError: approveError?.message || null,
@@ -1398,7 +1512,7 @@ export function useERC721VotingPower(contractAddress?: Address) {
     setApprovalForAll,
     delegate,
     mint,
-    
+
     // Query functions
     getTokenURI,
     getOwnerOf,
