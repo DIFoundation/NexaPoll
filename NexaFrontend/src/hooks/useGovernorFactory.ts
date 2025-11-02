@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useAccount, useReadContract, useWriteContract, useTransaction, useWatchContractEvent } from 'wagmi';
+import { useState, useCallback, useEffect } from 'react';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent } from 'wagmi';
 import { Address } from 'viem';
 import { governorFactoryAbi } from '@/lib/abi/faoctories/governorFactory';
 
@@ -89,70 +89,111 @@ export function useGovernorFactory(contractAddress?: Address) {
 
   // Write operations
   const { 
-    writeContractAsync: createDAO, 
-    data: createDAOTxData,
-    isPending: isCreateDAOLoading,
-    error: createDAOError
-  } = useWriteContract({
-    address: contractAddress,
-    abi: governorFactoryAbi,
-    functionName: 'createDAO',
-  });
+    writeContractAsync, 
+    data: createDAOTxHash,
+    isPending: isCreateDAOPending,
+    error: createDAOError,
+    reset: resetCreateDAO
+  } = useWriteContract();
 
   const { 
-    writeContractAsync: deleteDAO, 
-    isPending: isDeleteDAOLoading,
+    writeContractAsync: deleteDAOAsync, 
+    data: deleteDAOTxHash,
+    isPending: isDeleteDAOPending,
     error: deleteDAOError
-  } = useWriteContract({
-    address: contractAddress,
-    abi: governorFactoryAbi,
-    functionName: 'deleteDao',
+  } = useWriteContract();
+
+  // Wait for create DAO transaction confirmation
+  const { 
+    isLoading: isWaitingForCreateDAO,
+    isSuccess: isCreateDAOSuccess 
+  } = useWaitForTransactionReceipt({
+    hash: createDAOTxHash,
   });
 
-  // Wait for transaction to be mined
-  const { isPending: isCreateDAOPending } = useTransaction({
-    hash: createDAOTxData?.hash,
-    onSuccess: () => {
-      // Refetch DAO data after successful creation
+  // Wait for delete DAO transaction confirmation
+  const { 
+    isLoading: isWaitingForDeleteDAO,
+    isSuccess: isDeleteDAOSuccess 
+  } = useWaitForTransactionReceipt({
+    hash: deleteDAOTxHash,
+  });
+
+  // Refetch data after successful transactions
+  useEffect(() => {
+    if (isCreateDAOSuccess || isDeleteDAOSuccess) {
       Promise.all([refetchDaoCount(), refetchAllDAOs(), refetchUserDAOs()]);
-    },
-  });
+    }
+  }, [isCreateDAOSuccess, isDeleteDAOSuccess, refetchDaoCount, refetchAllDAOs, refetchUserDAOs]);
 
-  // Listen for DAOCreated events
+  // Listen for DAOCreated events (filter by current user)
   useWatchContractEvent({
     address: contractAddress,
     abi: governorFactoryAbi,
     eventName: 'DAOCreated',
-    listener(logs) {
+    onLogs(logs) {
       if (logs.length > 0) {
-        const latestLog = logs[0];
+        const latestLog = logs[logs.length - 1]; // Get most recent
         if ('args' in latestLog && latestLog.args) {
-          const { governor, timelock, treasury, token } = latestLog.args;
-          setCreatedDAO({
-            governor: governor as Address,
-            timelock: timelock as Address,
-            treasury: treasury as Address,
-            token: token as Address,
-          });
+          const { 
+            creator, 
+            governor, 
+            timelock, 
+            treasury, 
+            token 
+          } = latestLog.args;
+          
+          // Only set if this is the current user's DAO
+          if (creator === account) {
+            setCreatedDAO({
+              governor: governor as Address,
+              timelock: timelock as Address,
+              treasury: treasury as Address,
+              token: token as Address,
+            });
+          }
         }
       }
     },
   });
 
   // Create a new DAO
-  const createNewDAO = useCallback(async (params: CreateDAOParams) => {
-    if (!createDAO) {
-      throw new Error('Contract not initialized');
+  const createDAO = useCallback(async (params: CreateDAOParams) => {
+    if (!contractAddress) {
+      throw new Error('Contract address not provided');
+    }
+
+    if (!account) {
+      throw new Error('Wallet not connected');
     }
 
     setIsCreatingDAO(true);
     setDaoCreationError(null);
     setCreatedDAO(null);
+    resetCreateDAO();
 
     try {
-      const { daoName, daoDescription, metadataURI, tokenName, tokenSymbol, initialSupply, maxSupply, votingDelay, votingPeriod, proposalThreshold, timelockDelay, quorumPercentage, tokenType, baseURI = '' } = params;
+      const { 
+        daoName, 
+        daoDescription, 
+        metadataURI, 
+        tokenName, 
+        tokenSymbol, 
+        initialSupply, 
+        maxSupply, 
+        votingDelay, 
+        votingPeriod, 
+        proposalThreshold, 
+        timelockDelay, 
+        quorumPercentage, 
+        tokenType, 
+        baseURI = '' 
+      } = params;
       
-      const tx = await createDAO({
+      const hash = await writeContractAsync({
+        address: contractAddress,
+        abi: governorFactoryAbi,
+        functionName: 'createDAO',
         args: [
           daoName,
           daoDescription,
@@ -171,65 +212,61 @@ export function useGovernorFactory(contractAddress?: Address) {
         ],
       });
 
-      return tx;
+      return hash;
     } catch (error) {
       console.error('Error creating DAO:', error);
-      setDaoCreationError(error instanceof Error ? error.message : 'Failed to create DAO');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create DAO';
+      setDaoCreationError(errorMessage);
       throw error;
     } finally {
       setIsCreatingDAO(false);
     }
-  }, [createDAO]);
+  }, [contractAddress, account, writeContractAsync, resetCreateDAO]);
 
   // Delete a DAO
-  const removeDAO = useCallback(async (daoId: bigint) => {
-    if (!deleteDAO) {
-      throw new Error('Contract not initialized');
+  const deleteDAO = useCallback(async (daoId: bigint) => {
+    if (!contractAddress) {
+      throw new Error('Contract address not provided');
+    }
+
+    if (!account) {
+      throw new Error('Wallet not connected');
     }
 
     try {
-      const tx = await deleteDAO({
+      const hash = await deleteDAOAsync({
+        address: contractAddress,
+        abi: governorFactoryAbi,
+        functionName: 'deleteDao',
         args: [daoId],
       });
-
-      // Wait for the transaction to be mined
-      await tx.await();
       
-      // Refetch DAO data after deletion
-      await Promise.all([refetchDaoCount(), refetchAllDAOs(), refetchUserDAOs()]);
-      
-      return tx;
+      return hash;
     } catch (error) {
       console.error('Error deleting DAO:', error);
       throw error;
     }
-  }, [deleteDAO, refetchDaoCount, refetchAllDAOs, refetchUserDAOs]);
+  }, [contractAddress, account, deleteDAOAsync]);
 
   // Get a single DAO by ID
-  const getDAOById = useCallback(async (daoId: number): Promise<DAOConfig | null> => {
+  const getDAOById = useCallback((daoId: number): DAOConfig | null => {
     if (!contractAddress || typeof daoId !== 'number') return null;
-    
-    // This is a placeholder - in a real implementation, you might use a view function
-    // or fetch from subgraph/indexer
     return allDAOs[daoId] || null;
   }, [allDAOs, contractAddress]);
 
   // Get DAOs by token type
-  const getDAOsByTokenType = useCallback(async (tokenType: TokenType): Promise<DAOConfig[]> => {
+  const getDAOsByTokenType = useCallback((tokenType: TokenType): DAOConfig[] => {
     if (!contractAddress) return [];
-    
-    // This is a placeholder - in a real implementation, you would call the contract
-    // or fetch from a subgraph/indexer
     return allDAOs.filter(dao => dao.tokenType === tokenType);
   }, [allDAOs, contractAddress]);
 
-  // Get DAO by governor address
+  // Get DAO by any related address
   const getDAOByAddress = useCallback((address: Address): DAOConfig | undefined => {
     return allDAOs.find(dao => 
-      dao.governor === address || 
-      dao.timelock === address || 
-      dao.treasury === address || 
-      dao.token === address
+      dao.governor.toLowerCase() === address.toLowerCase() || 
+      dao.timelock.toLowerCase() === address.toLowerCase() || 
+      dao.treasury.toLowerCase() === address.toLowerCase() || 
+      dao.token.toLowerCase() === address.toLowerCase()
     );
   }, [allDAOs]);
 
@@ -240,23 +277,25 @@ export function useGovernorFactory(contractAddress?: Address) {
 
   return {
     // State
-    isCreatingDAO: isCreatingDAO || isCreateDAOLoading || isCreateDAOPending,
-    daoCreationError,
+    isCreatingDAO: isCreatingDAO || isCreateDAOPending || isWaitingForCreateDAO,
+    isDeletingDAO: isDeleteDAOPending || isWaitingForDeleteDAO,
+    daoCreationError: daoCreationError || createDAOError?.message || null,
+    deleteDAOError: deleteDAOError?.message || null,
     createdDAO,
     allDAOs,
     userDAOs,
-    daoCount: daoCount || BigInt(0),
+    daoCount: daoCount ? BigInt(daoCount.toString()) : BigInt(0),
     isLoading: isLoadingDaoCount || isLoadingAllDAOs || isLoadingUserDAOs,
     
     // Actions
-    createDAO: createNewDAO,
-    deleteDAO: removeDAO,
+    createDAO,
+    deleteDAO,
     getDAOById,
     getDAOByAddress,
     getDAOsByTokenType,
     refreshDAOs,
     
-    // Raw contract interactions (use with caution)
+    // Contract info
     contract: {
       address: contractAddress,
       abi: governorFactoryAbi,
@@ -266,37 +305,42 @@ export function useGovernorFactory(contractAddress?: Address) {
 
 export default useGovernorFactory;
 
+/* Usage Example:
 
+const { 
+  createDAO, 
+  allDAOs, 
+  userDAOs, 
+  isLoading, 
+  isCreatingDAO,
+  daoCreationError,
+  createdDAO 
+} = useGovernorFactory(contractAddress);
 
-// const { 
-//     createDAO, 
-//     allDAOs, 
-//     userDAOs, 
-//     isLoading, 
-//     isCreatingDAO,
-//     daoCreationError 
-//   } = useGovernorFactory(contractAddress);
-  
-//   // Create a new DAO
-//   const handleCreateDAO = async () => {
-//     try {
-//       const tx = await createDAO({
-//         daoName: "My DAO",
-//         daoDescription: "A new DAO for testing",
-//         metadataURI: "ipfs://...",
-//         tokenName: "Vote Token",
-//         tokenSymbol: "VOTE",
-//         initialSupply: BigInt(1000000),
-//         maxSupply: BigInt(1000000),
-//         votingDelay: 1,
-//         votingPeriod: 100,
-//         proposalThreshold: BigInt(1000),
-//         timelockDelay: 86400, // 1 day
-//         quorumPercentage: 4, // 4%
-//         tokenType: 0, // 0 for ERC20
-//       });
-//       // Transaction submitted, wait for confirmation
-//     } catch (error) {
-//       console.error("Failed to create DAO:", error);
-//     }
-//   };
+// Create a new DAO
+const handleCreateDAO = async () => {
+  try {
+    const txHash = await createDAO({
+      daoName: "My DAO",
+      daoDescription: "A new DAO for testing",
+      metadataURI: "ipfs://...",
+      tokenName: "Vote Token",
+      tokenSymbol: "VOTE",
+      initialSupply: BigInt(1000000),
+      maxSupply: BigInt(1000000),
+      votingDelay: 1,
+      votingPeriod: 100,
+      proposalThreshold: BigInt(1000),
+      timelockDelay: 86400, // 1 day
+      quorumPercentage: 4, // 4%
+      tokenType: 0, // ERC20
+    });
+    console.log("Transaction submitted:", txHash);
+    // Wait for isCreatingDAO to become false
+    // Check createdDAO for the deployed addresses
+  } catch (error) {
+    console.error("Failed to create DAO:", error);
+  }
+};
+
+*/

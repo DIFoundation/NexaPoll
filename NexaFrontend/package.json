@@ -33,8 +33,8 @@
     "react-dom": "19.1.0",
     "simple-icons": "^15.17.0",
     "tailwind-merge": "^3.3.1",
-    "viem": "^2.38.3",
-    "wagmi": "^2.18.1"
+    "viem": "^2.38.6",
+    "wagmi": "^2.19.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
