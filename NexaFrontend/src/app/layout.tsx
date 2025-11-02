@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import "./globals.css";
 import { headers } from 'next/headers'
 import ContextProvider from '@/context'
+import { Toaster } from "@/components/ui/sonner"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,10 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${inter.className} antialiased`}
       >
-        <ContextProvider cookies={cookies}>{children}</ContextProvider>
+        <ContextProvider cookies={cookies}>
+          {children}
+          <Toaster />
+        </ContextProvider>
       </body>
     </html>
   );
