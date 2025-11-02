@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
-// import { useAppKitNetwork } from '@reown/appkit/react'
 import { useRouter } from 'next/navigation';
 import Header from '../../components/Header';
 import { Button } from '../../components/ui/button';
@@ -10,6 +9,9 @@ import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
 import { Progress } from '../../components/ui/progress';
 import { ArrowRight, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+import { useGovernorFactory } from "@/hooks/useGovernorFactory"
+import { toast } from "sonner"
+import { TokenType } from "@/lib/types/dao";
 
 type DaoFormData = {
   // Step 1: Basic Info
@@ -18,7 +20,7 @@ type DaoFormData = {
   metadataURI: string;
   
   // Step 2: Token Config
-  tokenType: 'ERC20' | 'ERC721';
+  tokenType: TokenType;
   tokenName: string;
   tokenSymbol: string;
   initialSupply: string;
@@ -37,7 +39,7 @@ const INITIAL_FORM_DATA: DaoFormData = {
   daoName: '',
   daoDescription: '',
   metadataURI: '',
-  tokenType: 'ERC20',
+  tokenType: TokenType.ERC20,
   tokenName: '',
   tokenSymbol: '',
   initialSupply: '',
@@ -49,6 +51,8 @@ const INITIAL_FORM_DATA: DaoFormData = {
   timelockDelay: '86400', // 1 day in seconds
   quorumPercentage: '4', // 4% quorum
 };
+
+// const GOVERNOR_FACTORY_ADDRESS = process.env.NEXT_CELO_GOVERNOR_FACTORY_ADDRESS as `0x${string}`;
 
 // Step components
 const Step1BasicInfo = ({ formData, setFormData, errors }: { formData: DaoFormData, setFormData: (data: DaoFormData) => void, errors: Partial<Record<keyof DaoFormData, string>> }) => (
@@ -63,7 +67,6 @@ const Step1BasicInfo = ({ formData, setFormData, errors }: { formData: DaoFormDa
       />
       {errors.daoName && <p className="text-sm text-red-500">{errors.daoName}</p>}
     </div>
-    d
     <div className="space-y-2">
       <Label htmlFor="daoDescription">Description</Label>
       <textarea
@@ -97,16 +100,16 @@ const Step2TokenConfig = ({ formData, setFormData, errors }: { formData: DaoForm
         <div className="flex gap-4">
           <Button
             type="button"
-            variant={formData.tokenType === 'ERC20' ? 'default' : 'outline'}
-            onClick={() => setFormData({ ...formData, tokenType: 'ERC20' })}
+            variant={formData.tokenType === TokenType.ERC20 ? 'default' : 'outline'}
+            onClick={() => setFormData({ ...formData, tokenType: TokenType.ERC20 })}
             className="flex-1"
           >
             ERC20
           </Button>
           <Button
             type="button"
-            variant={formData.tokenType === 'ERC721' ? 'default' : 'outline'}
-            onClick={() => setFormData({ ...formData, tokenType: 'ERC721' })}
+            variant={formData.tokenType === TokenType.ERC721 ? 'default' : 'outline'}
+            onClick={() => setFormData({ ...formData, tokenType: TokenType.ERC721 })}
             className="flex-1"
           >
             ERC721
@@ -132,14 +135,14 @@ const Step2TokenConfig = ({ formData, setFormData, errors }: { formData: DaoForm
             id="tokenSymbol"
             value={formData.tokenSymbol}
             onChange={(e) => setFormData({ ...formData, tokenSymbol: e.target.value })}
-            placeholder={formData.tokenType === 'ERC20' ? 'TOK' : 'NFT'}
+            placeholder={formData.tokenType === TokenType.ERC20 ? 'TOK' : 'NFT'}
             className="uppercase"
           />
           {errors.tokenSymbol && <p className="text-sm text-red-500">{errors.tokenSymbol}</p>}
         </div>
       </div>
 
-      {formData.tokenType === 'ERC20' ? (
+      {formData.tokenType === TokenType.ERC20 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="initialSupply">Initial Supply *</Label>
@@ -369,18 +372,17 @@ export default function CreateDAOPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<DaoFormData>(INITIAL_FORM_DATA);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const [deployedAddresses, setDeployedAddresses] = useState<{
-    // governor: string;
-    // timelock: string;
-    // treasury: string;
-    // token: string;
-  // } | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof DaoFormData, string>>>({});
   
-  const { isConnected } = useAccount();
-  // const { chainId } = useAppKitNetwork();
-  // const { data: signer } = useSigner();
+  const { isConnected, address } = useAccount();
   const router = useRouter();
+  
+  const { 
+    createDAO, 
+    isCreatingDAO, 
+    daoCreationError, 
+    createdDAO 
+  } = useGovernorFactory();
 
   const steps = [
     { id: '1', name: 'Basic Info' },
@@ -442,7 +444,7 @@ export default function CreateDAOPage() {
 
   const handleSubmit = async () => {
     if (!validateStep(4)) return;
-    if (!isConnected) {
+    if (!isConnected || !address) {
       alert('Please connect your wallet first');
       return;
     }
@@ -450,27 +452,42 @@ export default function CreateDAOPage() {
     setIsSubmitting(true);
     
     try {
-      // TODO: Replace with actual contract deployment logic
-      // This is a mock implementation
-      console.log('Creating DAO with data:', formData);
+      // Map form data to CreateDAOParams
+      const daoParams = {
+        daoName: formData.daoName.trim(),
+        daoDescription: formData.daoDescription.trim(),
+        metadataURI: formData.metadataURI.trim() || '',
+        tokenName: formData.tokenName.trim(),
+        tokenSymbol: formData.tokenSymbol.trim(),
+        initialSupply: BigInt(formData.initialSupply || '0'),
+        maxSupply: formData.maxSupply ? BigInt(formData.maxSupply) : BigInt(0),
+        votingDelay: Number(formData.votingDelay),
+        votingPeriod: Number(formData.votingPeriod),
+        proposalThreshold: BigInt(formData.proposalThreshold || '0'),
+        timelockDelay: Number(formData.timelockDelay),
+        quorumPercentage: Number(formData.quorumPercentage),
+        tokenType: formData.tokenType === 'ERC20' ? TokenType.ERC20 : TokenType.ERC721,
+        baseURI: formData.baseURI || '',
+      };
+
+      // Call the createDAO function from the hook
+      await createDAO(daoParams);
+
       
-      // Simulate contract deployment
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock addresses - in a real app, these would come from the contract deployment transactions
-      // const mockAddresses = {
-      //   governor: '0x1234...5678',
-      //   timelock: '0x5678...1234',
-      //   treasury: '0x9abc...def0',
-      //   token: formData.tokenType === 'ERC20' ? '0xdef0...9abc' : '0xdef0...9abc',
-      // };
-      
-      // setDeployedAddresses(mockAddresses);
+      // If we get here, the transaction was successful
       setCurrentStep(5); // Show success step
-      
+      if (isCreatingDAO) {
+        toast.loading('Creating DAO...');
+      } else if (daoCreationError) {
+        toast.error(`Failed to create DAO: ${daoCreationError}`);
+      } else if (createdDAO) {
+        toast.success('DAO created successfully');
+      } else {
+        toast.error('Failed to create DAO');
+      }
     } catch (error) {
       console.error('Error creating DAO:', error);
-      alert(`Failed to create DAO: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Failed to create DAO: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -545,16 +562,14 @@ export default function CreateDAOPage() {
               <Button 
                 type="button" 
                 onClick={handleSubmit}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCreatingDAO}
               >
-                {isSubmitting ? (
+                {isSubmitting || isCreatingDAO ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Deploying...
+                    Creating DAO...
                   </>
-                ) : (
-                  'Deploy DAO'
-                )}
+                ) : 'Create DAO'}
               </Button>
             )}
           </CardFooter>

@@ -3,7 +3,9 @@ import { useAccount, useReadContract, useWriteContract, useWaitForTransactionRec
 import { Address } from 'viem';
 import { governorFactoryAbi } from '@/lib/abi/faoctories/governorFactory';
 
-type TokenType = 0 | 1; // 0 for ERC20, 1 for ERC721
+// type TokenType = 0 | 1; // 0 for ERC20, 1 for ERC721
+
+type TokenType = 'ERC20' | 'ERC721';
 
 export interface DAOConfig {
   daoName: string;
@@ -263,13 +265,12 @@ export function useGovernorFactory(contractAddress?: Address) {
   const getDAOById = useCallback((daoId: number): DAOConfig | null => {
     if (!contractAddress || typeof daoId !== 'number') return null;
     return allDAOs[daoId] || null;
-  }, [allDAOs, contractAddress]);
+  }, [contractAddress, allDAOs]);
 
   // Get DAOs by token type
   const getDAOsByTokenType = useCallback((tokenType: TokenType): DAOConfig[] => {
-    if (!contractAddress) return [];
     return allDAOs.filter(dao => dao.tokenType === tokenType);
-  }, [allDAOs, contractAddress]);
+  }, [allDAOs]);
 
   // Get DAO by any related address
   const getDAOByAddress = useCallback((address: Address): DAOConfig | undefined => {
