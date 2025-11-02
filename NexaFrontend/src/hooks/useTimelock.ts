@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useAccount, useReadContract, useWriteContract, useTransaction, useWatchContractEvent } from 'wagmi';
-import { Address, Hash } from 'viem';
+import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt, useWatchContractEvent } from 'wagmi';
+import { Address, Hash, keccak256, toHex } from 'viem';
 import { timelockAbi } from '@/lib/abi/core/timelock';
 
-export type OperationState = 'Unknown' | 'Pending' | 'Ready' | 'Done' | 'Cancelled';
+export type OperationState = 0 | 1 | 2 | 3; // 0=Unset(Unknown), 1=Waiting(Pending), 2=Ready, 3=Done
 
 export interface OperationDetails {
   id: Hash;
@@ -29,19 +29,35 @@ export interface BatchOperationDetails {
   state: OperationState;
 }
 
+export interface ScheduleParams {
+  target: Address;
+  value: bigint;
+  data: string;
+  predecessor?: Hash;
+  salt?: Hash;
+  delay?: bigint;
+}
+
+export interface ScheduleBatchParams {
+  targets: Address[];
+  values: bigint[];
+  payloads: string[];
+  predecessor?: Hash;
+  salt?: Hash;
+  delay?: bigint;
+}
+
+const ZERO_HASH: Hash = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
 export function useTimelock(contractAddress?: Address) {
   const { address: account } = useAccount();
-  const [minDelay, setMinDelay] = useState<bigint>(0n);
   const [operations, setOperations] = useState<Record<string, OperationDetails>>({});
-  const [
-    batchOperations,
-    // setBatchOperations
-  ] = useState<Record<string, BatchOperationDetails>>({});
+  const [batchOperations, setBatchOperations] = useState<Record<string, BatchOperationDetails>>({});
 
-  // Role hashes
+  // Get role hashes (constants)
   const {
     data: adminRole,
-    isLoading: isLoadingRoles,
+    isLoading: isLoadingAdminRole,
   } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
@@ -53,6 +69,7 @@ export function useTimelock(contractAddress?: Address) {
 
   const {
     data: proposerRole,
+    isLoading: isLoadingProposerRole,
   } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
@@ -64,6 +81,7 @@ export function useTimelock(contractAddress?: Address) {
 
   const {
     data: executorRole,
+    isLoading: isLoadingExecutorRole,
   } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
@@ -75,6 +93,7 @@ export function useTimelock(contractAddress?: Address) {
 
   const {
     data: cancellerRole,
+    isLoading: isLoadingCancellerRole,
   } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
@@ -86,7 +105,8 @@ export function useTimelock(contractAddress?: Address) {
 
   // Get minimum delay
   const {
-    data: delayData,
+    data: minDelayData,
+    isLoading: isLoadingMinDelay,
     refetch: refetchMinDelay,
   } = useReadContract({
     address: contractAddress,
@@ -95,116 +115,147 @@ export function useTimelock(contractAddress?: Address) {
     query: {
       enabled: !!contractAddress,
     },
-    // watch: true,
   });
 
-  // Check roles for current account
-  const hasRole = useCallback(async (role: Hash): Promise<boolean> => {
-    if (!contractAddress || !account) return false;
-    
-    const { data } = await refetchHasRole({ 
-      args: [role, account] 
-    });
-    return data ?? false;
-  }, [contractAddress, account]);
-
+  // Check if account has role
   const {
-    refetch: refetchHasRole,
+    data: hasAdminRoleData,
+    refetch: refetchHasAdminRole,
   } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
     functionName: 'hasRole',
+    args: [adminRole as Hash, account as Address],
     query: {
-      enabled: false, // We'll call this manually
+      enabled: !!contractAddress && !!account && !!adminRole,
     },
   });
 
-  // Schedule a new operation
-  const { 
-    writeContractAsync: scheduleOperation, 
-    data: scheduleTxData,
-    isPending: isScheduling,
-    error: scheduleError
-  } = useWriteContract({
+  const {
+    data: hasProposerRoleData,
+    refetch: refetchHasProposerRole,
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
-    functionName: 'schedule',
+    functionName: 'hasRole',
+    args: [proposerRole as Hash, account as Address],
+    query: {
+      enabled: !!contractAddress && !!account && !!proposerRole,
+    },
   });
 
-  // Schedule a batch operation
-  const { 
-    writeContractAsync: scheduleBatchOperation, 
-    data: scheduleBatchTxData,
-    isPending: isBatchScheduling,
-    error: scheduleBatchError
-  } = useWriteContract({
+  const {
+    data: hasExecutorRoleData,
+    refetch: refetchHasExecutorRole,
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
-    functionName: 'scheduleBatch',
+    functionName: 'hasRole',
+    args: [executorRole as Hash, account as Address],
+    query: {
+      enabled: !!contractAddress && !!account && !!executorRole,
+    },
   });
 
-  // Execute an operation
-  const { 
-    writeContractAsync: executeOperation, 
-    data: executeTxData,
-    isPending: isExecuting,
-    error: executeError
-  } = useWriteContract({
+  const {
+    data: hasCancellerRoleData,
+    refetch: refetchHasCancellerRole,
+  } = useReadContract({
     address: contractAddress,
     abi: timelockAbi,
-    functionName: 'execute',
+    functionName: 'hasRole',
+    args: [cancellerRole as Hash, account as Address],
+    query: {
+      enabled: !!contractAddress && !!account && !!cancellerRole,
+    },
   });
 
-  // Cancel an operation
+  // Write operations
   const { 
-    writeContractAsync: cancelOperation, 
-    data: cancelTxData,
-    isPending: isCancelling,
+    writeContractAsync: scheduleAsync, 
+    data: scheduleTxHash,
+    isPending: isSchedulePending,
+    error: scheduleError,
+    reset: resetSchedule
+  } = useWriteContract();
+
+  const { 
+    writeContractAsync: scheduleBatchAsync, 
+    data: scheduleBatchTxHash,
+    isPending: isScheduleBatchPending,
+    error: scheduleBatchError,
+    reset: resetScheduleBatch
+  } = useWriteContract();
+
+  const { 
+    writeContractAsync: executeAsync, 
+    data: executeTxHash,
+    isPending: isExecutePending,
+    error: executeError,
+    reset: resetExecute
+  } = useWriteContract();
+
+  const { 
+    writeContractAsync: executeBatchAsync, 
+    data: executeBatchTxHash,
+    isPending: isExecuteBatchPending,
+    error: executeBatchError
+  } = useWriteContract();
+
+  const { 
+    writeContractAsync: cancelAsync, 
+    data: cancelTxHash,
+    isPending: isCancelPending,
     error: cancelError
-  } = useWriteContract({
-    address: contractAddress,
-    abi: timelockAbi,
-    functionName: 'cancel',
+  } = useWriteContract();
+
+  // Wait for transaction receipts
+  const { isLoading: isWaitingForSchedule, isSuccess: isScheduleSuccess } = useWaitForTransactionReceipt({
+    hash: scheduleTxHash,
   });
 
-  // Wait for transactions to be mined
-  useTransaction({
-    hash: scheduleTxData?.hash,
-    onSuccess: () => {
-      // Refresh operations after scheduling
-      // In a real app, you might want to update the specific operation
-      // based on the operation ID from the transaction logs
-    },
+  const { isLoading: isWaitingForScheduleBatch, isSuccess: isScheduleBatchSuccess } = useWaitForTransactionReceipt({
+    hash: scheduleBatchTxHash,
   });
 
-  useTransaction({
-    hash: executeTxData?.hash,
-    onSuccess: () => {
-      // Refresh operations after execution
-    },
+  const { isLoading: isWaitingForExecute, isSuccess: isExecuteSuccess } = useWaitForTransactionReceipt({
+    hash: executeTxHash || executeBatchTxHash,
   });
+
+  const { isLoading: isWaitingForCancel, isSuccess: isCancelSuccess } = useWaitForTransactionReceipt({
+    hash: cancelTxHash,
+  });
+
+  // Refresh operations after successful transactions
+  useEffect(() => {
+    if (isScheduleSuccess || isScheduleBatchSuccess || isExecuteSuccess || isCancelSuccess) {
+      // Operations will be updated by event listeners
+    }
+  }, [isScheduleSuccess, isScheduleBatchSuccess, isExecuteSuccess, isCancelSuccess]);
 
   // Event listeners
   useWatchContractEvent({
     address: contractAddress,
     abi: timelockAbi,
     eventName: 'CallScheduled',
-    listener(logs) {
-      if (logs.length > 0 && 'args' in logs[0] && logs[0].args) {
-        const { id, target, value, data, predecessor, delay } = logs[0].args;
-        const operation: OperationDetails = {
-          id: id as Hash,
-          target: target as Address,
-          value: (value as bigint) || 0n,
-          data: data as string,
-          predecessor: predecessor as Hash,
-          salt: '0x', // Not available in the event
-          delay: (delay as bigint) || 0n,
-          timestamp: BigInt(Math.floor(Date.now() / 1000)),
-          state: 'Pending',
-        };
-        setOperations(prev => ({ ...prev, [operation.id]: operation }));
-      }
+    onLogs(logs) {
+      logs.forEach(log => {
+        if ('args' in log && log.args) {
+          const { id, index, target, value, data, predecessor, delay } = log.args;
+          const operation: OperationDetails = {
+            id: id as Hash,
+            target: target as Address,
+            value: (value as bigint) || 0n,
+            data: data as string,
+            predecessor: (predecessor as Hash) || ZERO_HASH,
+            salt: ZERO_HASH, // Not available in event
+            delay: (delay as bigint) || 0n,
+            timestamp: BigInt(Math.floor(Date.now() / 1000)),
+            state: 1, // Waiting/Pending
+          };
+          setOperations(prev => ({ ...prev, [operation.id]: operation }));
+        }
+      });
     },
   });
 
@@ -212,184 +263,426 @@ export function useTimelock(contractAddress?: Address) {
     address: contractAddress,
     abi: timelockAbi,
     eventName: 'CallExecuted',
-    listener(logs) {
-      if (logs.length > 0 && 'args' in logs[0] && logs[0].args) {
-        const { id } = logs[0].args;
-        setOperations(prev => {
-          const updated = { ...prev };
-          if (updated[id as string]) {
-            updated[id as string].state = 'Done';
-          }
-          return updated;
-        });
-      }
+    onLogs(logs) {
+      logs.forEach(log => {
+        if ('args' in log && log.args) {
+          const { id } = log.args;
+          setOperations(prev => {
+            const updated = { ...prev };
+            if (updated[id as string]) {
+              updated[id as string].state = 3; // Done
+            }
+            return updated;
+          });
+        }
+      });
     },
   });
 
-  // Update min delay when data changes
-  useEffect(() => {
-    if (delayData !== undefined) {
-      setMinDelay(delayData as bigint);
-    }
-  }, [delayData]);
+  useWatchContractEvent({
+    address: contractAddress,
+    abi: timelockAbi,
+    eventName: 'Cancelled',
+    onLogs(logs) {
+      logs.forEach(log => {
+        if ('args' in log && log.args) {
+          const { id } = log.args;
+          setOperations(prev => {
+            const updated = { ...prev };
+            if (updated[id as string]) {
+              // Remove cancelled operations
+              delete updated[id as string];
+            }
+            return updated;
+          });
+        }
+      });
+    },
+  });
+
+  // Helper to compute operation ID
+  const hashOperation = useCallback((
+    target: Address,
+    value: bigint,
+    data: string,
+    predecessor: Hash,
+    salt: Hash
+  ): Hash => {
+    return keccak256(
+      toHex([target, value, data, predecessor, salt])
+    ) as Hash;
+  }, []);
+
+  // Helper to compute batch operation ID
+  const hashOperationBatch = useCallback((
+    targets: Address[],
+    values: bigint[],
+    payloads: string[],
+    predecessor: Hash,
+    salt: Hash
+  ): Hash => {
+    return keccak256(
+      toHex([targets, values, payloads, predecessor, salt])
+    ) as Hash;
+  }, []);
 
   // Check operation state
   const getOperationState = useCallback(async (id: Hash): Promise<OperationState> => {
-    if (!contractAddress) return 'Unknown';
+    if (!contractAddress) return 0;
     
     try {
-      const { data } = await refetchOperationState({ args: [id] });
-      switch (data) {
-        case 0: return 'Unknown';
-        case 1: return 'Pending';
-        case 2: return 'Ready';
-        case 3: return 'Done';
-        case 4: return 'Cancelled';
-        default: return 'Unknown';
-      }
-    } catch (error) {
-      console.error('Error getting operation state:', error);
-      return 'Unknown';
-    }
-  }, [contractAddress]);
-
-  const {
-    refetch: refetchOperationState,
-  } = useReadContract({
-    address: contractAddress,
-    abi: timelockAbi,
-    functionName: 'getOperationState',
-    query: {
-      enabled: false, // We'll call this manually
-    },
-  });
-
-  // Schedule a new operation
-  const schedule = useCallback(async (
-    target: Address,
-    value: bigint,
-    data: string,
-    predecessor: Hash = '0x0000000000000000000000000000000000000000000000000000000000000000',
-    salt: Hash = '0x0000000000000000000000000000000000000000000000000000000000000000'
-  ) => {
-    if (!scheduleOperation) {
-      throw new Error('Contract not initialized');
-    }
-
-    try {
-      const tx = await scheduleOperation({
-        args: [target, value, data, predecessor, salt, minDelay],
-      });
-      return tx;
-    } catch (error) {
-      console.error('Error scheduling operation:', error);
-      throw error;
-    }
-  }, [scheduleOperation, minDelay]);
-
-  // Execute an operation
-  const execute = useCallback(async (
-    target: Address,
-    value: bigint,
-    data: string,
-    predecessor: Hash = '0x0000000000000000000000000000000000000000000000000000000000000000',
-    salt: Hash = '0x0000000000000000000000000000000000000000000000000000000000000000'
-  ) => {
-    if (!executeOperation) {
-      throw new Error('Contract not initialized');
-    }
-
-    try {
-      const tx = await executeOperation({
-        args: [target, value, data, predecessor, salt],
-        value, // Include value for payable functions
-      });
-      return tx;
-    } catch (error) {
-      console.error('Error executing operation:', error);
-      throw error;
-    }
-  }, [executeOperation]);
-
-  // Cancel an operation
-  const cancel = useCallback(async (id: Hash) => {
-    if (!cancelOperation) {
-      throw new Error('Contract not initialized');
-    }
-
-    try {
-      const tx = await cancelOperation({
+      const result = await useReadContract({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'getOperationState',
         args: [id],
       });
-      return tx;
+      return (result.data as OperationState) || 0;
     } catch (error) {
-      console.error('Error cancelling operation:', error);
-      throw error;
+      console.error('Error getting operation state:', error);
+      return 0;
     }
-  }, [cancelOperation]);
+  }, [contractAddress]);
 
   // Check if operation is ready
   const isOperationReady = useCallback(async (id: Hash): Promise<boolean> => {
     if (!contractAddress) return false;
     
     try {
-      const { data } = await refetchIsOperationReady({ args: [id] });
-      return data ?? false;
+      const result = await useReadContract({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'isOperationReady',
+        args: [id],
+      });
+      return result.data as boolean;
     } catch (error) {
       console.error('Error checking if operation is ready:', error);
       return false;
     }
   }, [contractAddress]);
 
-  const {
-    refetch: refetchIsOperationReady,
-  } = useReadContract({
-    address: contractAddress,
-    abi: timelockAbi,
-    functionName: 'isOperationReady',
-    query: {
-      enabled: false, // We'll call this manually
-    },
-  });
+  // Check if operation is pending
+  const isOperationPending = useCallback(async (id: Hash): Promise<boolean> => {
+    if (!contractAddress) return false;
+    
+    try {
+      const result = await useReadContract({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'isOperationPending',
+        args: [id],
+      });
+      return result.data as boolean;
+    } catch (error) {
+      console.error('Error checking if operation is pending:', error);
+      return false;
+    }
+  }, [contractAddress]);
+
+  // Check if operation is done
+  const isOperationDone = useCallback(async (id: Hash): Promise<boolean> => {
+    if (!contractAddress) return false;
+    
+    try {
+      const result = await useReadContract({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'isOperationDone',
+        args: [id],
+      });
+      return result.data as boolean;
+    } catch (error) {
+      console.error('Error checking if operation is done:', error);
+      return false;
+    }
+  }, [contractAddress]);
+
+  // Get timestamp when operation becomes ready
+  const getTimestamp = useCallback(async (id: Hash): Promise<bigint> => {
+    if (!contractAddress) return 0n;
+    
+    try {
+      const result = await useReadContract({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'getTimestamp',
+        args: [id],
+      });
+      return BigInt(result.data?.toString() || '0');
+    } catch (error) {
+      console.error('Error getting timestamp:', error);
+      return 0n;
+    }
+  }, [contractAddress]);
+
+  // Schedule a new operation
+  const schedule = useCallback(async (params: ScheduleParams) => {
+    if (!contractAddress) {
+      throw new Error('Contract address not provided');
+    }
+
+    const {
+      target,
+      value,
+      data,
+      predecessor = ZERO_HASH,
+      salt = ZERO_HASH,
+      delay
+    } = params;
+
+    const actualDelay = delay !== undefined ? delay : (minDelayData ? BigInt(minDelayData.toString()) : 0n);
+
+    resetSchedule();
+
+    try {
+      const hash = await scheduleAsync({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'schedule',
+        args: [target, value, data, predecessor, salt, actualDelay],
+      });
+
+      return hash;
+    } catch (error) {
+      console.error('Error scheduling operation:', error);
+      throw error;
+    }
+  }, [contractAddress, scheduleAsync, minDelayData, resetSchedule]);
+
+  // Schedule a batch operation
+  const scheduleBatch = useCallback(async (params: ScheduleBatchParams) => {
+    if (!contractAddress) {
+      throw new Error('Contract address not provided');
+    }
+
+    const {
+      targets,
+      values,
+      payloads,
+      predecessor = ZERO_HASH,
+      salt = ZERO_HASH,
+      delay
+    } = params;
+
+    const actualDelay = delay !== undefined ? delay : (minDelayData ? BigInt(minDelayData.toString()) : 0n);
+
+    resetScheduleBatch();
+
+    try {
+      const hash = await scheduleBatchAsync({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'scheduleBatch',
+        args: [targets, values, payloads, predecessor, salt, actualDelay],
+      });
+
+      return hash;
+    } catch (error) {
+      console.error('Error scheduling batch operation:', error);
+      throw error;
+    }
+  }, [contractAddress, scheduleBatchAsync, minDelayData, resetScheduleBatch]);
+
+  // Execute an operation
+  const execute = useCallback(async (
+    target: Address,
+    value: bigint,
+    data: string,
+    predecessor: Hash = ZERO_HASH,
+    salt: Hash = ZERO_HASH
+  ) => {
+    if (!contractAddress) {
+      throw new Error('Contract address not provided');
+    }
+
+    resetExecute();
+
+    try {
+      const hash = await executeAsync({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'execute',
+        args: [target, value, data, predecessor, salt],
+        value, // Include value for payable operations
+      });
+
+      return hash;
+    } catch (error) {
+      console.error('Error executing operation:', error);
+      throw error;
+    }
+  }, [contractAddress, executeAsync, resetExecute]);
+
+  // Execute a batch operation
+  const executeBatch = useCallback(async (
+    targets: Address[],
+    values: bigint[],
+    payloads: string[],
+    predecessor: Hash = ZERO_HASH,
+    salt: Hash = ZERO_HASH
+  ) => {
+    if (!contractAddress) {
+      throw new Error('Contract address not provided');
+    }
+
+    try {
+      // Calculate total value for payable operations
+      const totalValue = values.reduce((sum, val) => sum + val, 0n);
+
+      const hash = await executeBatchAsync({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'executeBatch',
+        args: [targets, values, payloads, predecessor, salt],
+        value: totalValue,
+      });
+
+      return hash;
+    } catch (error) {
+      console.error('Error executing batch operation:', error);
+      throw error;
+    }
+  }, [contractAddress, executeBatchAsync]);
+
+  // Cancel an operation
+  const cancel = useCallback(async (id: Hash) => {
+    if (!contractAddress) {
+      throw new Error('Contract address not provided');
+    }
+
+    try {
+      const hash = await cancelAsync({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'cancel',
+        args: [id],
+      });
+
+      return hash;
+    } catch (error) {
+      console.error('Error cancelling operation:', error);
+      throw error;
+    }
+  }, [contractAddress, cancelAsync]);
+
+  // Update delay
+  const updateDelay = useCallback(async (newDelay: bigint) => {
+    if (!contractAddress) {
+      throw new Error('Contract address not provided');
+    }
+
+    try {
+      const hash = await scheduleAsync({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'updateDelay',
+        args: [newDelay],
+      });
+
+      return hash;
+    } catch (error) {
+      console.error('Error updating delay:', error);
+      throw error;
+    }
+  }, [contractAddress, scheduleAsync]);
+
+  // Check if user has specific role
+  const hasRole = useCallback(async (role: Hash, accountAddress?: Address): Promise<boolean> => {
+    if (!contractAddress) return false;
+    
+    const addressToCheck = accountAddress || account;
+    if (!addressToCheck) return false;
+
+    try {
+      const result = await useReadContract({
+        address: contractAddress,
+        abi: timelockAbi,
+        functionName: 'hasRole',
+        args: [role, addressToCheck],
+      });
+      return result.data as boolean;
+    } catch (error) {
+      console.error('Error checking role:', error);
+      return false;
+    }
+  }, [contractAddress, account]);
 
   // Refresh all data
   const refresh = useCallback(async () => {
     await Promise.all([
       refetchMinDelay(),
-      // Add other refetch calls as needed
+      refetchHasAdminRole(),
+      refetchHasProposerRole(),
+      refetchHasExecutorRole(),
+      refetchHasCancellerRole(),
     ]);
-  }, [refetchMinDelay]);
+  }, [
+    refetchMinDelay,
+    refetchHasAdminRole,
+    refetchHasProposerRole,
+    refetchHasExecutorRole,
+    refetchHasCancellerRole,
+  ]);
 
   return {
     // State
-    minDelay,
+    minDelay: minDelayData ? BigInt(minDelayData.toString()) : 0n,
     operations,
     batchOperations,
-    isLoading: isLoadingRoles,
-    isScheduling,
-    isBatchScheduling,
-    isExecuting,
-    isCancelling,
-    error: scheduleError || scheduleBatchError || executeError || cancelError,
+    isLoading: isLoadingMinDelay || isLoadingAdminRole || isLoadingProposerRole || 
+               isLoadingExecutorRole || isLoadingCancellerRole,
     
-    // Roles
+    // Loading states per operation
+    isScheduling: isSchedulePending || isWaitingForSchedule,
+    isSchedulingBatch: isScheduleBatchPending || isWaitingForScheduleBatch,
+    isExecuting: isExecutePending || isExecuteBatchPending || isWaitingForExecute,
+    isCancelling: isCancelPending || isWaitingForCancel,
+    
+    // Errors
+    scheduleError: scheduleError?.message || null,
+    scheduleBatchError: scheduleBatchError?.message || null,
+    executeError: executeError?.message || executeBatchError?.message || null,
+    cancelError: cancelError?.message || null,
+    
+    // Role information
     roles: {
       admin: adminRole as Hash | undefined,
       proposer: proposerRole as Hash | undefined,
       executor: executorRole as Hash | undefined,
       canceller: cancellerRole as Hash | undefined,
     },
+    
+    // User's roles
+    userRoles: {
+      hasAdminRole: hasAdminRoleData as boolean,
+      hasProposerRole: hasProposerRoleData as boolean,
+      hasExecutorRole: hasExecutorRoleData as boolean,
+      hasCancellerRole: hasCancellerRoleData as boolean,
+    },
 
     // Actions
-    hasRole,
     schedule,
+    scheduleBatch,
     execute,
+    executeBatch,
     cancel,
-    isOperationReady,
+    updateDelay,
+    hasRole,
+    
+    // Query functions
     getOperationState,
+    isOperationReady,
+    isOperationPending,
+    isOperationDone,
+    getTimestamp,
+    
+    // Helpers
+    hashOperation,
+    hashOperationBatch,
     refresh,
 
-    // Raw contract interactions (use with caution)
+    // Contract info
     contract: {
       address: contractAddress,
       abi: timelockAbi,
@@ -399,64 +692,89 @@ export function useTimelock(contractAddress?: Address) {
 
 export default useTimelock;
 
+/* Usage Example:
 
-// const { 
-//     minDelay,
-//     operations,
-//     schedule,
-//     execute,
-//     cancel,
-//     isOperationReady,
-//     hasRole,
-//     isLoading,
-//     isScheduling,
-//     isExecuting
-//   } = useTimelock(timelockAddress);
-  
-//   // Check if current user is a proposer
-//   useEffect(() => {
-//     const checkRole = async () => {
-//       const isProposer = await hasRole(proposerRole);
-//       // Update UI based on role
-//     };
-//     checkRole();
-//   }, [hasRole, proposerRole]);
-  
-//   // Schedule a new operation
-//   const handleSchedule = async () => {
-//     try {
-//       const tx = await schedule(
-//         targetAddress,
-//         value,
-//         encodedFunctionData,
-//         predecessor,
-//         salt
-//       );
-//       await tx.wait();
-//       // Operation scheduled
-//     } catch (error) {
-//       console.error('Failed to schedule operation:', error);
-//     }
-//   };
-  
-//   // Execute an operation
-//   const handleExecute = async (operationId: Hash) => {
-//     try {
-//       const isReady = await isOperationReady(operationId);
-//       if (!isReady) {
-//         throw new Error('Operation is not ready to execute');
-//       }
-      
-//       const tx = await execute(
-//         operations[operationId].target,
-//         operations[operationId].value,
-//         operations[operationId].data,
-//         operations[operationId].predecessor,
-//         operations[operationId].salt
-//       );
-//       await tx.wait();
-//       // Operation executed
-//     } catch (error) {
-//       console.error('Failed to execute operation:', error);
-//     }
-//   };
+const { 
+  minDelay,
+  operations,
+  schedule,
+  execute,
+  cancel,
+  isOperationReady,
+  hasRole,
+  userRoles,
+  roles,
+  isScheduling,
+  isExecuting,
+  hashOperation
+} = useTimelock(timelockAddress);
+
+// Check if current user is a proposer
+const canPropose = userRoles.hasProposerRole;
+
+// Schedule a new operation
+const handleSchedule = async () => {
+  try {
+    const hash = await schedule({
+      target: targetAddress,
+      value: 0n,
+      data: encodedFunctionData,
+      predecessor: ZERO_HASH,
+      salt: ZERO_HASH,
+      // delay is optional, uses minDelay by default
+    });
+    
+    console.log("Scheduled:", hash);
+    // Wait for isScheduling to become false
+  } catch (error) {
+    console.error('Failed to schedule operation:', error);
+  }
+};
+
+// Schedule a batch operation
+const handleScheduleBatch = async () => {
+  try {
+    const hash = await scheduleBatch({
+      targets: [address1, address2],
+      values: [0n, 0n],
+      payloads: [data1, data2],
+    });
+    
+    console.log("Batch scheduled:", hash);
+  } catch (error) {
+    console.error('Failed to schedule batch:', error);
+  }
+};
+
+// Execute an operation after delay
+const handleExecute = async (operation: OperationDetails) => {
+  try {
+    const ready = await isOperationReady(operation.id);
+    if (!ready) {
+      throw new Error('Operation is not ready to execute');
+    }
+    
+    const hash = await execute(
+      operation.target,
+      operation.value,
+      operation.data,
+      operation.predecessor,
+      operation.salt
+    );
+    
+    console.log("Executed:", hash);
+  } catch (error) {
+    console.error('Failed to execute operation:', error);
+  }
+};
+
+// Calculate operation ID
+const operationId = hashOperation(
+  targetAddress,
+  0n,
+  encodedData,
+  ZERO_HASH,
+  ZERO_HASH
+);
+
+*/
