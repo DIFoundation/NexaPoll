@@ -1,324 +1,195 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-/**
- * @title DGPGovernor
- * @dev Core governance contract managing proposals, voting, and execution logic.
- * Inherits from OpenZeppelin's Governor contracts for security and modularity.
- * Lifecycle: Pending → Active → Succeeded/Defeated → Queued → Executed
- */
-import "@openzeppelin/contracts/governance/Governor.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorSettings.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorCountingSimple.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
-import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
-import "@openzeppelin/contracts/utils/math/SafeCast.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-contract DGPGovernor is
-    Governor,
-    GovernorSettings,
-    GovernorCountingSimple,
-    GovernorVotes,
-    GovernorTimelockControl,
-    Ownable
-{
-    uint256 private _quorumPercentage; // e.g., 10 for 10%
+import "@openzeppelin/contracts/governance/utils/IVotes.sol";
+import "../core/DGPGovernor.sol";
+import "../core/DGPTimelockController.sol";
+import "../core/DGPTreasury.sol";
+import "../core/voting/ERC20VotingPower.sol";
+import "../core/voting/ERC721VotingPower.sol";
 
-    // DAO member management
-    mapping(address => bool) private _isMember;
-    address[] private _members;
-    event MemberAdded(address indexed member, uint256 votingPower);
-    event MemberRemoved(address indexed member);
-    enum ProposalStatus { Draft, Active, Passed, Failed, Queued, Executed }
-    struct ProposalMetadata {
-        string title;
-        string description;  
-        string proposalType;
-        string proposedSolution;
-        string rationale;
-        string expectedOutcomes;
-        string timeline;
-        string budget;
-        address proposer;
-        uint256 timestamp;
-        ProposalStatus status;
-        uint256 votesFor;
-        uint256 votesAgainst;
-        uint256 quorumReachedPct;
-    }
-    mapping(uint256 => ProposalMetadata) private _proposalMetadata;
-    IVotes public votingToken;
+contract GovernorFactory {
+    enum TokenType { ERC20, ERC721 }
 
-    uint256 public constant MAX_VOTING_POWER = 10_000 * 1e18;
-
-    constructor(
-        IVotes _token,
-        TimelockController _timelock,
-        uint256 _votingDelay,
-        uint256 _votingPeriod,
-        uint256 _proposalThreshold,
-        uint256 quorumPercentage_,
-        address admin
-    )
-        Governor("Decentralized Governance Protocol Governor")
-        GovernorSettings(
-            SafeCast.toUint48(_votingDelay),
-            SafeCast.toUint32(_votingPeriod),
-            _proposalThreshold
-        )
-        GovernorVotes(_token)
-        GovernorTimelockControl(_timelock)
-        Ownable(admin)
-    {
-        require(
-            quorumPercentage_ > 0 && quorumPercentage_ <= 100,
-            "Invalid quorum percentage"
-        );
-        _quorumPercentage = quorumPercentage_;
-        votingToken = _token;
-        _transferOwnership(admin);
+    struct DAOConfig {
+        string daoName;
+        string metadataURI; // e.g. IPFS link or org description
+        string daoDescription;
+        address governor;
+        address timelock;
+        address treasury;
+        address token;
+        TokenType tokenType;
+        address creator;
+        uint256 createdAt;
     }
 
-    /**
-     * @dev Add a new DAO member and mint voting power to them (onlyOwner)
-     * @param member Address to add
-     * @param votingPower Amount of voting power to mint (ERC20: tokens, ERC721: NFTs)
-     */
-    function addMember(address member, uint256 votingPower) external onlyOwner {
-        require(member != address(0), "Invalid member");
-        require(!_isMember[member], "Already a member");
-        _isMember[member] = true;
-        _members.push(member);
-        // Mint voting power if Governor has MINTER_ROLE
-        _mintVotingPower(member, votingPower);
-        emit MemberAdded(member, votingPower);
+    DAOConfig[] private daos;
+    mapping(address => address[]) private daosByCreator;
+    mapping(address => bool) public isDAO;
+    event DAOCreated(
+        address indexed governor,
+        address indexed timelock,
+        address indexed treasury,
+        string daoName,
+        address token,
+        TokenType tokenType,
+        address creator,
+        uint256 daoId
+    );
+
+    event TokenDeployed(address indexed token, TokenType tokenType, string tokenName, string tokenSymbol);
+
+    function createDAO(
+        string memory daoName,
+        string memory daoDescription,
+        string memory metadataURI,
+        string memory tokenName,
+        string memory tokenSymbol,
+        uint256 initialSupply,
+        uint256 maxSupply,
+        uint256 votingDelay,
+        uint256 votingPeriod,
+        uint256 proposalThreshold,
+        uint256 timelockDelay,
+        uint256 quorumPercentage,
+        TokenType tokenType,
+        string memory baseURI
+    ) external returns (address governor, address timelock, address treasury, address token) {
+        timelock = _deployTimelock(timelockDelay);
+        token = _deployToken(tokenType, tokenName, tokenSymbol, initialSupply, maxSupply, baseURI);
+        governor = _deployGovernor(token, timelock, votingDelay, votingPeriod, proposalThreshold, quorumPercentage);
+        treasury = _deployTreasury(timelock);
+
+        _configureRoles(tokenType, token, governor, timelock);
+        _recordDAO(daoName, daoDescription, metadataURI, governor, timelock, treasury, token, tokenType);
+        _configureTimelockRoles(timelock, governor);
     }
 
-    /**
-     * @dev Batch add members and mint voting power (onlyOwner)
-     */
-    function batchAddMembers(address[] calldata members, uint256[] calldata votingPowers) external onlyOwner {
-        require(members.length == votingPowers.length, "Length mismatch");
-        for (uint256 i = 0; i < members.length; i++) {
-            _isMember[members[i]] = true;
-            _members.push(members[i]);
-            _mintVotingPower(members[i], votingPowers[i]);
-            emit MemberAdded(members[i], votingPowers[i]);
+    function _deployTimelock(uint256 delay) internal returns (address) { 
+        address[] memory proposers;
+        address[] memory executors;
+        return address(new DGPTimelockController(delay, proposers, executors, address(this)));
+    }
+    function _deployToken(TokenType tokenType, string memory tokenName, string memory tokenSymbol, uint256 initialSupply, uint256 maxSupply, string memory baseURI) internal returns (address) {
+        if (tokenType == TokenType.ERC20) {
+            return address(new ERC20VotingPower(tokenName, tokenSymbol, initialSupply, maxSupply, msg.sender));
+        } else {
+            return address(new ERC721VotingPower(tokenName, tokenSymbol, maxSupply, baseURI));
         }
     }
-
-    /**
-     * @dev Remove a DAO member (onlyOwner)
-     */
-    function removeMember(address member) external onlyOwner {
-        require(_isMember[member], "Not a member");
-        _isMember[member] = false;
-        // Remove from _members array
-        for (uint256 i = 0; i < _members.length; i++) {
-            if (_members[i] == member) {
-                _members[i] = _members[_members.length - 1];
-                _members.pop();
-                break;
-            }
-        }
-        emit MemberRemoved(member);
+    function _deployGovernor(address token, address timelock, uint256 votingDelay, uint256 votingPeriod, uint256 proposalThreshold, uint256 quorumPercentage) internal returns (address) {
+        IVotes votesToken = IVotes(token);
+        DGPTimelockController timelockController = DGPTimelockController(payable(timelock));
+        return address(new DGPGovernor(
+            votesToken,
+            timelockController,
+            votingDelay,
+            votingPeriod,
+            proposalThreshold,
+            quorumPercentage,
+            msg.sender
+        ));
     }
-
-    /**
-     * @dev List all DAO members
-     */
-    function listMembers() external view returns (address[] memory) {
-        return _members;
+    function _deployTreasury(address timelock) internal returns (address) {
+        return address(new DGPTreasury(timelock, timelock));
     }
+    function _configureRoles(TokenType tokenType, address token, address governor, address timelock) internal { 
+    if (tokenType == TokenType.ERC20) {
+        ERC20VotingPower erc20 = ERC20VotingPower(token);
 
-    /**
-     * @dev Internal mint voting power logic (ERC20 or ERC721)
-     */
-    function _mintVotingPower(address to, uint256 amount) internal {
-        // Try ERC20 mint
-        (bool success, ) = address(votingToken).call(
-            abi.encodeWithSignature("mint(address,uint256)", to, amount)
-        );
-        if (!success) {
-            // Try ERC721 mint (amount = number of NFTs)
-            for (uint256 i = 0; i < amount; i++) {
-                (bool nftSuccess, ) = address(votingToken).call(
-                    abi.encodeWithSignature("mint(address)", to)
-                );
-                require(nftSuccess, "ERC721 mint failed");
-            }
-        }
+        // Governor can mint directly (for member top-ups)
+        erc20.grantRole(erc20.MINTER_ROLE(), address(governor));
+
+        // Timelock can mint via approved proposals
+        erc20.grantRole(erc20.MINTER_ROLE(), timelock);
+
+        // Revoke factory's own minter role so it cannot mint after setup
+        erc20.revokeRole(erc20.MINTER_ROLE(), address(this));
+
+        // Transfer admin control of roles to Timelock
+        erc20.grantRole(erc20.DEFAULT_ADMIN_ROLE(), timelock);
+
+        // Factory renounces admin to make DAO self-governing
+        erc20.renounceRole(erc20.DEFAULT_ADMIN_ROLE(), address(this));
+
+    } else {
+        ERC721VotingPower erc721 = ERC721VotingPower(token);
+
+        erc721.grantRole(erc721.MINTER_ROLE(), address(governor));
+        erc721.grantRole(erc721.MINTER_ROLE(), timelock);
+
+        // Revoke factory's own minter role so it cannot mint after setup
+        erc721.revokeRole(erc721.MINTER_ROLE(), address(this));
+
+        erc721.grantRole(erc721.DEFAULT_ADMIN_ROLE(), timelock);
+        erc721.renounceRole(erc721.DEFAULT_ADMIN_ROLE(), address(this));
     }
-
-    /**
-     * @dev Create a proposal with custom metadata (title, description)
-     * @param targets List of target addresses for calls
-     * @param values List of ETH values for calls
-     * @param calldatas List of calldata for calls
-     * @param title Title of the proposal
-     * @param description Description of the proposal
-     * @return proposalId The ID of the created proposal
-     */
-    function proposeWithMetadata(
-        address[] memory targets,
-        uint256[] memory values,  
-        bytes[] memory calldatas,
-        string memory title,
-        string memory description,
-        string memory proposalType,
-        string memory proposedSolution,
-        string memory rationale,
-        string memory expectedOutcomes,
-        string memory timeline,
-        string memory budget
-    ) public returns (uint256 proposalId) {
-        // Compose a description string for Governor compatibility
-        string memory fullDescription = string(abi.encodePacked(title, "\n", description));
-        proposalId = propose(targets, values, calldatas, fullDescription);
-        _proposalMetadata[proposalId] = ProposalMetadata({  
-            title: title,
-            description: description,
-            proposalType: proposalType,
-            proposedSolution: proposedSolution,
-            rationale: rationale,
-            expectedOutcomes: expectedOutcomes,
-            timeline: timeline,
-            budget: budget,
-            proposer: msg.sender,
-            timestamp: block.timestamp,
-            status: ProposalStatus.Draft,
-            votesFor: 0,
-            votesAgainst: 0,
-            quorumReachedPct: 0
-        });
-    }
-
-    // Update proposal status in metadata based on Governor state
-    function getProposalMetadata(uint256 proposalId) external view returns (ProposalMetadata memory) {
-        ProposalMetadata memory meta = _proposalMetadata[proposalId];
-        // Update votes and quorum reached percentage dynamically
-        (uint256 forVotes, uint256 againstVotes, ) = proposalVotes(proposalId);
-        meta.votesFor = forVotes;
-        meta.votesAgainst = againstVotes;
-        uint256 totalSupply = token().getPastTotalSupply(proposalSnapshot(proposalId));
-        meta.quorumReachedPct = totalSupply > 0 ? (forVotes * 100) / totalSupply : 0;
-        // Update status
-        ProposalState state_ = state(proposalId);
-        if (state_ == ProposalState.Pending) meta.status = ProposalStatus.Draft;
-        else if (state_ == ProposalState.Active) meta.status = ProposalStatus.Active;  
-        else if (state_ == ProposalState.Succeeded) meta.status = ProposalStatus.Passed;
-        else if (state_ == ProposalState.Defeated) meta.status = ProposalStatus.Failed;
-        else if (state_ == ProposalState.Queued) meta.status = ProposalStatus.Queued;
-        else if (state_ == ProposalState.Executed) meta.status = ProposalStatus.Executed;
-        return meta;
-    }
-
-    // Prevent proposal creator from voting on their own proposal
-    function castVote(uint256 proposalId, uint8 support) public override returns (uint256) {
-        require(msg.sender != _proposalMetadata[proposalId].proposer, "Creator cannot vote");
-        return super.castVote(proposalId, support);
-    }
-    function castVoteWithReason(uint256 proposalId, uint8 support, string calldata reason) public override returns (uint256) {
-        require(msg.sender != _proposalMetadata[proposalId].proposer, "Creator cannot vote");
-        return super.castVoteWithReason(proposalId, support, reason);
-    }
-
-    function mintVotingPower(address to, uint256 amount) external onlyOwner {
-    require(_isMember[to], "Not a member");
-
-    // Optional safety limit (works for ERC20)
-    try IERC20(address(votingToken)).balanceOf(to) returns (uint256 currentBalance) {
-        require(currentBalance + amount <= MAX_VOTING_POWER, "Exceeds allowed limit");
-    } catch {
-        // Skip check for ERC721 tokens (not balanceOf compatible)
-    }
-
-    _mintVotingPower(to, amount);
 }
 
-    /**
-     * @dev Calculate quorum as a percentage of total supply at a given block
-     * @param blockNumber The block number to query
-     * @return The number of votes required for quorum
-     */
-    function quorum(uint256 blockNumber) public view override returns (uint256) {
-        uint256 totalSupply = token().getPastTotalSupply(blockNumber);
-        return (totalSupply * _quorumPercentage) / 100;
+    function _configureTimelockRoles(address timelock, address governor) internal { 
+        DGPTimelockController timelockContract = DGPTimelockController(payable(timelock));
+
+        bytes32 proposerRole = timelockContract.PROPOSER_ROLE();
+        bytes32 executorRole = timelockContract.EXECUTOR_ROLE();
+        bytes32 adminRole = timelockContract.DEFAULT_ADMIN_ROLE();
+
+        timelockContract.grantRole(proposerRole, governor);
+        // allow anyone to execute queued operations (optional; change to governor if you want restricted execution)
+        timelockContract.grantRole(executorRole, address(0));
+
+        // Make governor the admin of timelock (so governance can change roles via proposals)
+        timelockContract.grantRole(adminRole, governor);
+        // factory renounces admin role on timelock
+        timelockContract.renounceRole(adminRole, address(this));
     }
 
-    /**
-     * @dev Get the current quorum percentage
-     */
-    function quorumPercentage() public view returns (uint256) {
-        return _quorumPercentage;
+    function _recordDAO(string memory daoName, string memory daoDescription, string memory metadataURI, address governor, address timelock, address treasury, address token, TokenType tokenType) internal { 
+        uint256 daoId = daos.length;
+        daos.push(DAOConfig({
+            daoName: daoName,
+            metadataURI: metadataURI,
+            daoDescription: daoDescription,
+            governor: governor,
+            timelock: timelock,
+            treasury: treasury,
+            token: token,
+            tokenType: tokenType,
+            creator: msg.sender,
+            createdAt: block.timestamp
+        }));
+        daosByCreator[msg.sender].push(governor);
+        isDAO[governor] = true;
+        emit DAOCreated(governor, timelock, treasury, daoName, token, tokenType, msg.sender, daoId);
     }
-  
-    function proposalThreshold()
-        public
-        view
-        override(Governor, GovernorSettings)
-        returns (uint256)
-    {
-        return super.proposalThreshold();
+    // ------------------ Frontend helper views ------------------
+    function getDaoCount() external view returns (uint256) {
+        return daos.length;
     }
-
-    // Resolve multiple inheritance
-    function state(uint256 proposalId) public view override(Governor, GovernorTimelockControl) returns (ProposalState) {
-        return super.state(proposalId);
+    function getDao(uint256 daoId) external view returns (DAOConfig memory) {
+        require(daoId < daos.length, "DAO does not exist");
+        return daos[daoId];
     }
-
-    function proposalNeedsQueuing(uint256 proposalId) public view override(Governor, GovernorTimelockControl) returns (bool) {
-        return super.proposalNeedsQueuing(proposalId);
+    function getAllDaos() external view returns (DAOConfig[] memory) {
+        return daos;
     }
-
-    function _queueOperations(
-        uint256 proposalId,
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
-    ) internal override(Governor, GovernorTimelockControl) returns (uint48) {
-        return
-            super._queueOperations(
-                proposalId,
-                targets,
-                values,
-                calldatas,
-                descriptionHash
-            );
+    function getDaosByCreator(address creator) external view returns (address[] memory) {
+        return daosByCreator[creator];
     }
-
-    function _executeOperations(
-        uint256 proposalId,
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
-    ) internal override(Governor, GovernorTimelockControl) {
-        super._executeOperations(
-            proposalId,
-            targets,
-            values,
-            calldatas,
-            descriptionHash
-        );
+    function getDaosByTokenType(TokenType tokenType) external view returns (DAOConfig[] memory) {
+        uint256 len = daos.length;
+        DAOConfig[] memory temp = new DAOConfig[](len);
+        uint256 count;
+        for (uint256 i; i < len; ++i) {
+            if (daos[i].tokenType == tokenType) temp[count++] = daos[i];
+        }
+        assembly { mstore(temp, count) }
+        return temp;
     }
 
-    function _cancel(  
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        bytes32 descriptionHash
-    ) internal override(Governor, GovernorTimelockControl) returns (uint256) {
-        return super._cancel(targets, values, calldatas, descriptionHash);
-    }
-    function _executor()
-        internal
-        view  
-        override(Governor, GovernorTimelockControl)
-        returns (address)
-    {
-        return super._executor();
+    function deleteDao(uint256 daoId) external {
+        require(daoId < daos.length, "DAO does not exist");
+        daos[daoId] = daos[daos.length - 1];
+        daos.pop();
     }
 }
