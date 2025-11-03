@@ -49,10 +49,10 @@ const INITIAL_FORM_DATA: DaoFormData = {
   votingPeriod: '7200', // ~1 day in blocks (assuming 12s block time)
   proposalThreshold: '0',
   timelockDelay: '86400', // 1 day in seconds
-  quorumPercentage: '4', // 4% quorum
+  quorumPercentage: '51', // 4% quorum
 };
 
-// const GOVERNOR_FACTORY_ADDRESS = process.env.NEXT_CELO_GOVERNOR_FACTORY_ADDRESS as `0x${string}`;
+const GOVERNOR_FACTORY_ADDRESS = process.env.NEXT_CELO_GOVERNOR_FACTORY_ADDRESS as `0x${string}`;
 
 // Step components
 const Step1BasicInfo = ({ formData, setFormData, errors }: { formData: DaoFormData, setFormData: (data: DaoFormData) => void, errors: Partial<Record<keyof DaoFormData, string>> }) => (
@@ -382,7 +382,7 @@ export default function CreateDAOPage() {
     isCreatingDAO, 
     daoCreationError, 
     createdDAO 
-  } = useGovernorFactory();
+  } = useGovernorFactory(GOVERNOR_FACTORY_ADDRESS);
 
   const steps = [
     { id: '1', name: 'Basic Info' },
@@ -478,18 +478,17 @@ export default function CreateDAOPage() {
       setCurrentStep(5); // Show success step
       if (isCreatingDAO) {
         toast.loading('Creating DAO...');
-      } else if (daoCreationError) {
-        toast.error(`Failed to create DAO: ${daoCreationError}`);
-      } else if (createdDAO) {
-        toast.success('DAO created successfully');
-      } else {
-        toast.error('Failed to create DAO');
       }
     } catch (error) {
       console.error('Error creating DAO:', error);
-      toast.error(`Failed to create DAO: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      if (daoCreationError) {
+        toast.error(`Failed to create DAO: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     } finally {
       setIsSubmitting(false);
+      if (createdDAO) {
+        toast.success('DAO created successfully');
+      }
     }
   };
 
